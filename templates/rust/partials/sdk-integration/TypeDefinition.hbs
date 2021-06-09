@@ -1,0 +1,85 @@
+{{#switch name.value}}
+  {{#case 'Inputs'}}
+    #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
+    pub struct InputEncoded {
+    {{#each fields }}
+      #[serde(rename = "{{name.value}}")]
+      pub {{snakeCase name.value}}: Vec<u8>,
+    {{/each}}
+    }
+    fn deserialize_inputs(
+        args: InputEncoded,
+    ) -> std::result::Result<
+        {{pascalCase "Inputs"}},
+        std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>,
+    > {
+        Ok(Inputs {
+            {{#each fields }}
+            {{snakeCase name.value}}: deserialize(&args.{{snakeCase name.value}})?,
+            {{/each}}
+        })
+    }
+    #[cfg(feature = "guest")]
+    #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
+    pub struct {{pascalCase name.value}} {
+      {{#each fields }}
+      #[serde(rename = "{{name.value}}")]
+      pub {{snakeCase name.value}}: {{> expandType type }},
+      {{/each}}
+    }
+
+  {{/case}}
+  {{#case 'Outputs'}}
+    fn get_outputs(inv_id: String) -> Outputs {
+        Outputs {
+          {{#each fields}}
+            {{snakeCase name.value}}: GuestPort{{pascalCase name.value}} { inv_id: inv_id.clone(), },
+          {{/each}}
+        }
+    }
+
+    {{#each fields}}
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct GuestPort{{pascalCase name.value}} {
+        inv_id: String,
+    }
+
+    impl GuestPort{{pascalCase name.value}} {
+        pub fn send(&self, payload: {{> expandType type}}) -> CallResult {
+            host_call(
+                &self.inv_id,
+                "",
+                "{{name.value}}",
+                &serialize(OutputPayload::MessagePack(serialize(payload)?))?,
+            )
+        }
+        pub fn exception(&self, message: String) -> CallResult {
+            host_call(
+                &self.inv_id,
+                "",
+                "{{name.value}}",
+                &serialize(OutputPayload::Exception(message))?,
+            )
+        }
+    }
+    {{/each}}
+
+    #[cfg(feature = "guest")]
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct Outputs {
+    {{#each fields}}
+        pub {{snakeCase name.value}}: GuestPort{{pascalCase name.value}},
+    {{/each}}
+    }
+  {{/case}}
+  {{#default}}
+    #[cfg(feature = "guest")]
+    #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
+    pub struct {{pascalCase name.value}} {
+      {{#each fields }}
+      #[serde(rename = "{{name.value}}")]
+      pub {{snakeCase name.value}}: {{> expandType type }},
+      {{/each}}
+    }
+  {{/default}}
+{{/switch}}

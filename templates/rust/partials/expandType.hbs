@@ -1,0 +1,21 @@
+
+{{#switch kind ~}}
+  {{#case "Named"}}
+    {{#switch name.value}}
+      {{#case "string"}}String{{/case}}
+      {{#default}}{{name.value}}{{/default}}
+    {{/switch}}
+  {{/case}}
+  {{#case "MapType"}}
+    std::collections::HashMap<{{> expandType keyType}}, {{> expandType valueType}}>
+  {{/case}}
+  {{#case "ListType"}}
+    std::vec::Vec<{{> expandType type}}>
+  {{/case}}
+  {{#case "Optional"}}
+    Option<{{>expandType type}}>
+  {{/case}}
+  {{#default}}
+    unknown
+  {{/default}}
+{{~/switch}}
