@@ -3,7 +3,7 @@ use rmps::{Deserializer, Serializer};
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 pub use vino_guest::Signal;
-use vino_guest::{ConnectionDownstream, OutputPayload};
+use vino_guest::{OutputPayload};
 
 #[cfg(feature = "guest")]
 extern crate wapc_guest as guest;
