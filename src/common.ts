@@ -13,6 +13,8 @@ export enum LANGUAGE {
 export enum CODEGEN_TYPE {
   SdkIntegration = 'sdk-integration',
   GuestBoilerplate = 'guest-boilerplate',
+  ProviderComponent = 'provider-component',
+  ProviderIntegration = 'provider-integration',
 }
 
 export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.SdkIntegration;

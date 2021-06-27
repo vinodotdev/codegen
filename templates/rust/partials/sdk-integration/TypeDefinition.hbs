@@ -24,7 +24,7 @@
     pub struct {{pascalCase name.value}} {
       {{#each fields }}
       #[serde(rename = "{{name.value}}")]
-      pub {{snakeCase name.value}}: {{> expandType type }},
+      pub {{snakeCase name.value}}: {{> expand-type type }},
       {{/each}}
     }
 
@@ -45,7 +45,7 @@
     }
 
     impl GuestPort{{pascalCase name.value}} {
-        pub fn send(&self, payload: {{> expandType type}}) -> CallResult {
+        pub fn send(&self, payload: {{> expand-type type}}) -> CallResult {
             host_call(
                 &self.inv_id,
                 "",
@@ -78,7 +78,7 @@
     pub struct {{pascalCase name.value}} {
       {{#each fields }}
       #[serde(rename = "{{name.value}}")]
-      pub {{snakeCase name.value}}: {{> expandType type }},
+      pub {{snakeCase name.value}}: {{> expand-type type }},
       {{/each}}
     }
   {{/default}}

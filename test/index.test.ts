@@ -8,7 +8,7 @@ import { getTemplate, CODEGEN_TYPE, commitOutput, LANGUAGE } from '../src';
 
 describe('getTemplate', function () {
   it('should get templates for every language and codegen type', () => {
-    const expectedTotal = 2;
+    const expectedTotal = 3;
     let actualTotal = 0;
     for (const lang of Object.values(LANGUAGE)) {
       for (const type of Object.values(CODEGEN_TYPE)) {

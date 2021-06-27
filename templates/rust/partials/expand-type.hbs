@@ -3,19 +3,20 @@
   {{#case "Named"}}
     {{#switch name.value}}
       {{#case "string"}}String{{/case}}
+      {{#case "bytes"}}Vec<u8>{{/case}}
       {{#default}}{{name.value}}{{/default}}
     {{/switch}}
   {{/case}}
   {{#case "MapType"}}
-    std::collections::HashMap<{{> expandType keyType}}, {{> expandType valueType}}>
+    HashMap<{{> expand-type keyType}}, {{> expand-type valueType}}>
   {{/case}}
   {{#case "ListType"}}
-    std::vec::Vec<{{> expandType type}}>
+    Vec<{{> expand-type type}}>
   {{/case}}
   {{#case "Optional"}}
-    Option<{{>expandType type}}>
+    Option<{{>expand-type type}}>
   {{/case}}
   {{#default}}
-    unknown
+  unknown
   {{/default}}
 {{~/switch}}
