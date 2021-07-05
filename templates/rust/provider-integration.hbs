@@ -1,6 +1,6 @@
 
 // This file is generated, do not edit
-use vino_provider::{VinoProviderComponent, Component};
+use vino_provider::{VinoProviderComponent, ComponentSignature};
 pub(crate) mod generated;
 
 {{#each definitions}}
@@ -18,7 +18,7 @@ pub(crate) fn get_component(
       {{#each definitions}}
         {{#switch kind}}
           {{#case "ImportDefinition"}}
-            {{#import from.value}}"{{ namespace.name.value }}"{{/import}} => Some(Box::new({{snakeCase from.value}}::Component::default())),
+            {{#import from.value}}"{{ namespace.name.value }}"{{/import}} => Some(Box::new(generated::{{snakeCase from.value}}::Component::default())),
           {{/case}}
         {{/switch}}
       {{/each}}
@@ -26,17 +26,17 @@ pub(crate) fn get_component(
     }
 }
 
-pub(crate) fn get_all_components() -> Vec<Component> {
+pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
   vec![
   {{#each definitions}}
     {{#switch kind}}
       {{#case "ImportDefinition"}}
-        Component {
+        ComponentSignature {
         {{#import from.value}}
           name: "{{namespace.name.value }}".to_string(),
         {{/import}}
-        inputs : {{snakeCase from.value}}::inputs_list().into_iter().map(From::from).collect(),
-        outputs : {{snakeCase from.value}}::outputs_list().into_iter().map(From::from).collect(),
+        inputs : generated::{{snakeCase from.value}}::inputs_list().into_iter().map(From::from).collect(),
+        outputs : generated::{{snakeCase from.value}}::outputs_list().into_iter().map(From::from).collect(),
         },
       {{/case}}
     {{/switch}}

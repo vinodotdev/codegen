@@ -1,9 +1,9 @@
 import yargs from 'yargs';
 import { LANGUAGE } from '../common';
 
-const COMMAND_NAME = LANGUAGE.Rust;
+const COMMAND_NAME = LANGUAGE.JSON;
 
-export const desc = 'Generate Rust code from a WIDL schema';
+export const desc = 'Generate JSON data';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .commandDir(COMMAND_NAME)

@@ -1,0 +1,12 @@
+mod generated;
+
+pub(crate) mod components {
+  {{#each schemas}}
+  pub(crate) mod {{filename}};
+  {{/each}}
+}
+
+#[no_mangle]
+pub fn wapc_init() {
+  generated::register_handlers();
+}

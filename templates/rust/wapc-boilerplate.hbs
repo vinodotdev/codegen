@@ -1,0 +1,84 @@
+
+use wapc_guest::{
+  register_function,
+  HandlerResult,
+  CallResult,host_call
+};
+
+use vino_codec::messagepack::{
+  deserialize,
+  serialize,
+};
+
+pub fn register_handlers() {
+  {{#each schemas}}
+  Handlers::register_{{snakeCase filename}}(super::components::{{snakeCase filename}}::job);
+  {{/each}}
+}
+
+#[cfg(feature = "guest")]
+pub struct Handlers {}
+
+#[cfg(feature = "guest")]
+impl Handlers {
+{{#each schemas}}
+    pub fn register_{{snakeCase filename}}(f: fn({{snakeCase filename}}::Inputs, {{snakeCase filename}}::Outputs) -> HandlerResult<()>) {
+        *{{upperCase filename}}.write().unwrap() = Some(f);
+        register_function(&"{{document.namespace.name.value}}", {{snakeCase filename}}_wrapper);
+    }
+{{/each}}
+}
+
+#[cfg(feature = "guest")]
+lazy_static::lazy_static! {
+{{#each schemas}}
+static ref {{upperCase filename}}: std::sync::RwLock<Option<fn({{snakeCase filename}}::Inputs, {{snakeCase filename}}::Outputs) -> HandlerResult<()>>> = std::sync::RwLock::new(None);
+{{/each}}
+}
+
+{{#each schemas}}
+#[cfg(feature = "guest")]
+fn {{snakeCase filename}}_wrapper(input_payload: &[u8]) -> CallResult {
+    use {{snakeCase filename}}::*;
+    let (inv_id, input_encoded): (String, InputEncoded) = deserialize(input_payload)?;
+    let outputs = get_outputs(inv_id);
+    let inputs: Inputs = deserialize_inputs(input_encoded)?;
+    let lock = {{upperCase filename}}.read().unwrap().unwrap();
+    let result = lock(inputs, outputs)?;
+    Ok(serialize(result)?)
+}
+{{/each}}
+
+{{#each schemas}}
+pub (crate) mod {{snakeCase filename}} {
+  use serde::{
+    Deserialize,
+    Serialize,
+  };
+
+  use vino_component::v0::Payload;
+  use vino_component::Packet;
+
+  use super::*;
+
+{{#with document}}
+{{#each definitions}}
+{{#switch kind}}
+  {{#case "NamespaceDefinition"}}
+  // Implementation for {{name.value}}
+  {{/case}}
+  {{#case "TypeDefinition"}}
+    {{#switch name.value}}
+        {{> TypeDefinition .}}
+    {{/switch}}
+  {{/case}}
+  {{#default}}
+    {{debug .}}
+    {{panic "WIDL Node not yet handled"}}
+  {{/default}}
+{{/switch}}
+{{/each}}
+
+{{/with}}
+}
+{{/each}}

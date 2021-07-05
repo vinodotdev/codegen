@@ -4,20 +4,40 @@ import findroot from 'find-root';
 import DEBUG from 'debug';
 import { handlebars } from 'widl-template';
 import { ast } from '@wapc/widl';
+import { AbstractNode, Kind, ListType, MapType, Named, Optional } from '@wapc/widl/ast';
+import yargs from 'yargs';
 export const debug = DEBUG('vino-codegen');
 
 export enum LANGUAGE {
   Rust = 'rust',
+  WIDL = 'widl',
+  JSON = 'json',
 }
 
 export enum CODEGEN_TYPE {
-  SdkIntegration = 'sdk-integration',
-  GuestBoilerplate = 'guest-boilerplate',
   ProviderComponent = 'provider-component',
   ProviderIntegration = 'provider-integration',
+  WapcComponent = 'wapc-component',
+  WapcLib = 'wapc-lib',
+  WapcIntegration = 'wapc-integration',
 }
 
-export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.SdkIntegration;
+export enum WIDL_TYPE {
+  Interface = 'interface',
+  Schema = 'schema',
+}
+
+export enum JSON_TYPE {
+  Interface = 'interface',
+}
+
+export const LANGUAGE_OFFERS = {
+  [LANGUAGE.Rust]: CODEGEN_TYPE,
+  [LANGUAGE.WIDL]: WIDL_TYPE,
+  [LANGUAGE.JSON]: JSON_TYPE,
+};
+
+export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.WapcIntegration;
 
 export function readFile(path: string): string {
   try {
@@ -27,7 +47,7 @@ export function readFile(path: string): string {
   }
 }
 
-export function getTemplate(language: LANGUAGE, type: CODEGEN_TYPE): string {
+export function getTemplate(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): string {
   const templatePath = path.join(findroot(__dirname), 'templates', language, `${type}.hbs`);
   debug('Reading template %o->%o located at %o', language, type, templatePath);
   return readFile(templatePath);
@@ -40,7 +60,7 @@ export function registerPartial(language: LANGUAGE, partial: string): void {
   handlebars.registerPartial(partial, partialSource);
 }
 
-export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE): void {
+export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): void {
   const relativeDir = path.join(language, 'partials', type);
   const dir = path.join(findroot(__dirname), 'templates', relativeDir);
   for (const node of Object.values(ast.Kind)) {
@@ -59,6 +79,71 @@ export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE): vo
       handlebars.registerPartial(node, partialSource);
     }
   }
+}
+
+// This should be a separate module but won't until it does a complete codegen
+export function codegen(node: AbstractNode): string {
+  switch (node.kind) {
+    case Kind.Named:
+      return (<Named>node).name.value;
+    case Kind.Optional:
+      return `${codegen((<Optional>node).type as unknown as AbstractNode)}?`;
+    case Kind.MapType:
+      return `{${codegen((<MapType>node).keyType as unknown as AbstractNode)}:${codegen(
+        (<MapType>node).valueType as unknown as AbstractNode,
+      )}`;
+    case Kind.ListType:
+      return `[${codegen((<ListType>node).type as unknown as AbstractNode)}]`;
+    default:
+      // console.log(node);
+      throw new Error(`Unhandled node ${node.kind}`);
+  }
+}
+
+export interface CommonOutputOptions {
+  force: boolean;
+  silent: boolean;
+  output?: string;
+}
+
+export interface CommonWidlOptions {
+  root: string;
+}
+
+export function outputOpts(obj: { [key: string]: yargs.Options }): typeof obj {
+  if (typeof obj != 'object' || obj === null) throw new Error(`Invalid argument: ${obj}`);
+  const commonOptions = {
+    s: {
+      alias: 'silent',
+      describe: 'Silently ignore write errors',
+      type: 'boolean',
+    },
+    f: {
+      alias: 'force',
+      describe: 'Overwrite destination output even if it exists',
+      type: 'boolean',
+      implies: 'o',
+    },
+    o: {
+      alias: 'output',
+      describe: 'The output destination (defaults to STDOUT)',
+      default: undefined,
+      type: 'string',
+    },
+  };
+  return Object.assign({}, obj, commonOptions);
+}
+
+export function widlOpts(obj: { [key: string]: yargs.Options }): typeof obj {
+  if (typeof obj != 'object' || obj === null) throw new Error(`Invalid argument: ${obj}`);
+  const commonOptions = {
+    r: {
+      alias: 'root',
+      describe: 'The root directory to use when resolving import definitions',
+      type: 'string',
+    },
+  };
+  return Object.assign({}, obj, commonOptions);
 }
 
 interface CommitOptions {

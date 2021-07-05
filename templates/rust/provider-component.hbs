@@ -1,8 +1,26 @@
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
+use std::sync::{
+  Arc,
+  Mutex,
+};
+
+use async_trait::async_trait;
+use log::trace;
+use serde::{
+  Deserialize,
+  Serialize,
+};
 use vino_codec::messagepack::deserialize;
-use vino_rpc::port::{Port, Receiver, Sender};
+use vino_provider::error::ProviderError;
+use vino_provider::{
+  Context as ProviderContext,
+  VinoProviderComponent,
+};
+use vino_rpc::port::{
+  Port,
+  PortStream,
+  Sender,
+};
 
 {{#eachWithName definitions "Inputs" }}
 #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
@@ -70,15 +88,51 @@ impl Sender for {{pascalCase name.value}}Sender {
 }
 {{/each}}
 
-pub (crate) fn get_outputs() -> (Outputs, Receiver) {
+pub (crate) fn get_outputs() -> (Outputs, PortStream) {
     let outputs = Outputs::default();
     let ports = vec![
     {{#each fields}}
     outputs.{{snakeCase name.value}}.port.clone(),
     {{/each}}
     ];
-    let receiver = Receiver::new(ports);
-    (outputs, receiver)
+    let stream = PortStream::new(ports);
+    (outputs, stream)
 }
 
 {{/eachWithName}}
+
+pub(crate) struct Component {}
+impl Default for Component {
+  fn default() -> Self {
+    Self {}
+  }
+}
+
+#[async_trait]
+impl VinoProviderComponent for Component {
+  type Context = crate::State;
+
+  fn get_name(&self) -> String {
+    format!("vino::{}", "{{namespace.name.value}}")
+  }
+  fn get_input_ports(&self) -> Vec<(String, String)> {
+    inputs_list()
+  }
+  fn get_output_ports(&self) -> Vec<(String, String)> {
+    outputs_list()
+  }
+  async fn job_wrapper(
+    &self,
+    context: ProviderContext<Self::Context>,
+    data: HashMap<String, Vec<u8>>,
+  ) -> std::result::Result<PortStream, Box<dyn std::error::Error + Send + Sync>> {
+    trace!("Job passed data: {:?}", data);
+    let inputs = deserialize_inputs(&data).map_err(ProviderError::InputDeserializationError)?;
+    let (outputs, stream) = get_outputs();
+    let result = super::super::{{snakeCase namespace.name.value}}::job(inputs, outputs, context).await;
+    match result {
+      Ok(_) => Ok(stream),
+      Err(e) => Err(ProviderError::JobError(format!("Job failed: {}", e.to_string())).into()),
+    }
+  }
+}

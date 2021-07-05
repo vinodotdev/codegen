@@ -4,21 +4,20 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-import { getTemplate, CODEGEN_TYPE, commitOutput, LANGUAGE } from '../src';
+import { getTemplate, commitOutput, LANGUAGE } from '../src';
+import { LANGUAGE_OFFERS } from '../src/common';
 
 describe('getTemplate', function () {
   it('should get templates for every language and codegen type', () => {
-    const expectedTotal = 3;
-    let actualTotal = 0;
+    const emptyTemplate = [];
     for (const lang of Object.values(LANGUAGE)) {
-      for (const type of Object.values(CODEGEN_TYPE)) {
-        actualTotal++;
+      for (const type of Object.values(LANGUAGE_OFFERS[lang])) {
         const src = getTemplate(lang, type);
-        // arbitrary src length to test as m minimum;
-        expect(src).length.to.be.greaterThan(10);
+        // arbitrary src length to test as a minimum;
+        if (src.length < 5) emptyTemplate.push(`${lang}/${type} missing`);
       }
     }
-    expect(actualTotal).to.equal(expectedTotal);
+    expect(emptyTemplate).to.deep.equal([]);
   });
   describe('commitOutput', function () {
     const origLog = console.log;
@@ -30,9 +29,11 @@ describe('getTemplate', function () {
         messages.push(message);
       };
     });
+
     afterEach(() => {
       console.log = origLog;
     });
+
     it('should print to STDOUT when not passed a path', () => {
       commitOutput('file contents');
       expect(messages.length).to.equal(1);

@@ -7,7 +7,8 @@
       pub {{snakeCase name.value}}: Vec<u8>,
     {{/each}}
     }
-    fn deserialize_inputs(
+
+    pub(crate) fn deserialize_inputs(
         args: InputEncoded,
     ) -> std::result::Result<
         {{pascalCase "Inputs"}},
@@ -19,6 +20,7 @@
             {{/each}}
         })
     }
+
     #[cfg(feature = "guest")]
     #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
     pub struct {{pascalCase name.value}} {
@@ -30,7 +32,7 @@
 
   {{/case}}
   {{#case 'Outputs'}}
-    fn get_outputs(inv_id: String) -> Outputs {
+    pub(crate) fn get_outputs(inv_id: String) -> Outputs {
         Outputs {
           {{#each fields}}
             {{snakeCase name.value}}: GuestPort{{pascalCase name.value}} { inv_id: inv_id.clone(), },
@@ -48,17 +50,17 @@
         pub fn send(&self, payload: {{> expand-type type}}) -> CallResult {
             host_call(
                 &self.inv_id,
-                "",
                 "{{name.value}}",
-                &serialize(OutputPayload::MessagePack(serialize(payload)?))?,
+                "port",
+                 &serialize(Packet::V0(Payload::to_messagepack(payload)))?,
             )
         }
         pub fn exception(&self, message: String) -> CallResult {
             host_call(
                 &self.inv_id,
-                "",
                 "{{name.value}}",
-                &serialize(OutputPayload::Exception(message))?,
+                "port",
+                &serialize(Packet::V0(Payload::Exception(message)))?,
             )
         }
     }

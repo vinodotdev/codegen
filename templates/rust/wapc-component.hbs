@@ -1,0 +1,13 @@
+mod generated;
+extern crate wapc_guest as guest;
+
+pub use generated::*;
+
+pub(crate) mod components {
+  pub(crate) mod validate;
+}
+
+#[no_mangle]
+pub fn wapc_init() {
+  generated::register_handlers();
+}
