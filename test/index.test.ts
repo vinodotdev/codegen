@@ -57,10 +57,10 @@ describe('getTemplate', function () {
       fs.writeFileSync(filepath, 'content');
       expect(fs.existsSync(filepath)).to.be.true;
       const output = `Wrote "${bignum}" to file: ${filepath}\n`;
-      function shouldThrow() {
+      function shouldNotThrow() {
         commitOutput(output, filepath);
       }
-      expect(shouldThrow).to.throw();
+      expect(shouldNotThrow).to.not.throw();
       expect(messages.length).to.equal(0);
       expect(fs.existsSync(filepath)).to.be.true;
       const realSrc = fs.readFileSync(filepath, 'utf-8');

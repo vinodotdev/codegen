@@ -16,9 +16,6 @@ import fs from 'fs';
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.WapcComponentModule;
 
-export const command = `${TYPE} <schema_dir> [options]`;
-
-export const desc = 'Generate boilerplate component module';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('schema_dir', {

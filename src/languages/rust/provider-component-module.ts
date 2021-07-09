@@ -14,11 +14,11 @@ import {
 import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WapcComponentModule;
+const TYPE = CODEGEN_TYPE.ProviderComponentModule;
 
 export const command = `${TYPE} <schema_dir> [options]`;
+export const desc = 'Generate root native provider components module';
 
-export const desc = 'Generate boilerplate component module';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('schema_dir', {

@@ -14,9 +14,6 @@ import {
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.WapcLib;
 
-export const command = `${TYPE} [options]`;
-
-export const desc = 'Generate boilerplate component lib.rs';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs.options(outputOpts({})).example(`${LANG} ${TYPE}`, 'Prints boilerplate lib.rs to STDOUT');
 };

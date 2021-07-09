@@ -3,11 +3,8 @@
 ***********************************************/
 
 use vino_provider::{VinoProviderComponent, ComponentSignature};
-pub(crate) mod generated;
 
-{{#each schemas}}
-pub(crate) mod {{snakeCase file.unhyphenated}};
-{{/each}}
+use crate::generated;
 
 pub(crate) fn get_component(
     name: &str,
@@ -31,3 +28,9 @@ pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
   {{/each}}
   ]
 }
+
+{{#each schemas}}
+pub (crate) mod {{snakeCase file.unhyphenated}} {
+  {{> component document }}
+}
+{{/each}}

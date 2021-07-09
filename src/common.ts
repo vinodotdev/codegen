@@ -15,13 +15,13 @@ export enum LANGUAGE {
 }
 
 export enum CODEGEN_TYPE {
-  ProviderBoilerplate = 'provider-boilerplate',
   ProviderComponent = 'provider-component',
+  ProviderComponentModule = 'provider-component-module',
   ProviderIntegration = 'provider-integration',
   WapcComponent = 'wapc-component',
   WapcComponentModule = 'wapc-component-module',
-  WapcLib = 'wapc-lib',
   WapcIntegration = 'wapc-integration',
+  WapcLib = 'wapc-lib',
 }
 
 export enum WIDL_TYPE {
@@ -87,20 +87,18 @@ export function registerPartial(language: LANGUAGE, partial: string): void {
 export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): void {
   const relativeDir = path.join(language, 'partials', type);
   const dir = path.join(findroot(__dirname), 'templates', relativeDir);
-  for (const node of Object.values(ast.Kind)) {
-    const filename = `${node}.hbs`;
-    const partialPath = path.join(dir, filename);
+  debug(`Looking for partials in ${dir}`);
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const name = file.replace(path.extname(`${file}.hbs`), '');
+    const partialPath = path.join(dir, file);
+    debug(`Loading partial ${partialPath}`);
     const exists = fs.existsSync(partialPath);
     if (exists) {
-      debug(
-        `AST handler ${language}.${type} %o at %o`,
-        language,
-        type,
-        exists ? 'FOUND' : 'NOT FOUND',
-        path.join(relativeDir, filename),
-      );
+      debug(`Registering partial for ${language}.${type}`);
       const partialSource = readFile(partialPath);
-      handlebars.registerPartial(node, partialSource);
+      handlebars.registerPartial(name, partialSource);
     }
   }
 }
@@ -190,6 +188,7 @@ export function commitOutput(src: string, path?: string, options: CommitOptions 
           if (options.silent) return;
           else {
             console.error(`${path} exists, to overwrite pass --force to the codegen or delete the file`);
+            return;
           }
         }
       }
