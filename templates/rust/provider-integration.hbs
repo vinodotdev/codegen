@@ -1,26 +1,20 @@
+/**********************************************
+***** This file is generated, do not edit *****
+***********************************************/
 
-// This file is generated, do not edit
 use vino_provider::{VinoProviderComponent, ComponentSignature};
 pub(crate) mod generated;
 
-{{#each definitions}}
-  {{#switch kind}}
-    {{#case "ImportDefinition"}}
-pub mod {{snakeCase from.value}};
-    {{/case}}
-  {{/switch}}
+{{#each schemas}}
+pub(crate) mod {{snakeCase file.unhyphenated}};
 {{/each}}
 
 pub(crate) fn get_component(
     name: &str,
 ) -> Option<Box<dyn VinoProviderComponent<Context = crate::State> + Sync + Send>> {
     match name {
-      {{#each definitions}}
-        {{#switch kind}}
-          {{#case "ImportDefinition"}}
-            {{#import from.value}}"{{ namespace.name.value }}"{{/import}} => Some(Box::new(generated::{{snakeCase from.value}}::Component::default())),
-          {{/case}}
-        {{/switch}}
+      {{#each schemas}}
+        "{{ document.namespace.name.value }}" => Some(Box::new(generated::{{snakeCase file.unhyphenated}}::Component::default())),
       {{/each}}
         _ => None,
     }
@@ -28,18 +22,12 @@ pub(crate) fn get_component(
 
 pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
   vec![
-  {{#each definitions}}
-    {{#switch kind}}
-      {{#case "ImportDefinition"}}
-        ComponentSignature {
-        {{#import from.value}}
-          name: "{{namespace.name.value }}".to_string(),
-        {{/import}}
-        inputs : generated::{{snakeCase from.value}}::inputs_list().into_iter().map(From::from).collect(),
-        outputs : generated::{{snakeCase from.value}}::outputs_list().into_iter().map(From::from).collect(),
-        },
-      {{/case}}
-    {{/switch}}
+  {{#each schemas}}
+    ComponentSignature {
+      name: "{{document.namespace.name.value }}".to_owned(),
+      inputs : generated::{{snakeCase file.unhyphenated}}::inputs_list().into_iter().map(From::from).collect(),
+      outputs : generated::{{snakeCase file.unhyphenated}}::outputs_list().into_iter().map(From::from).collect(),
+    },
   {{/each}}
   ]
 }

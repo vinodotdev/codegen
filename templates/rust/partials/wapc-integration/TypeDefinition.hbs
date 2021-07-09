@@ -32,32 +32,34 @@
 
   {{/case}}
   {{#case 'Outputs'}}
-    pub(crate) fn get_outputs(inv_id: String) -> Outputs {
+    pub(crate) fn get_outputs(inv_id: &str) -> Outputs<'_> {
         Outputs {
           {{#each fields}}
-            {{snakeCase name.value}}: GuestPort{{pascalCase name.value}} { inv_id: inv_id.clone(), },
+            {{snakeCase name.value}}: GuestPort{{pascalCase name.value}} { inv_id, },
           {{/each}}
         }
     }
 
     {{#each fields}}
     #[derive(Debug, PartialEq, Clone)]
-    pub struct GuestPort{{pascalCase name.value}} {
-        inv_id: String,
+    pub struct GuestPort{{pascalCase name.value}}<'a> {
+        inv_id: &'a str,
     }
 
-    impl GuestPort{{pascalCase name.value}} {
+    impl<'a> GuestPort{{pascalCase name.value}}<'a> {
+        #[allow(unused)]
         pub fn send(&self, payload: {{> expand-type type}}) -> CallResult {
             host_call(
-                &self.inv_id,
+                self.inv_id,
                 "{{name.value}}",
                 "port",
                  &serialize(Packet::V0(Payload::to_messagepack(payload)))?,
             )
         }
+        #[allow(unused)]
         pub fn exception(&self, message: String) -> CallResult {
             host_call(
-                &self.inv_id,
+                self.inv_id,
                 "{{name.value}}",
                 "port",
                 &serialize(Packet::V0(Payload::Exception(message)))?,
@@ -68,9 +70,9 @@
 
     #[cfg(feature = "guest")]
     #[derive(Debug, PartialEq, Clone)]
-    pub struct Outputs {
+    pub struct Outputs<'a> {
     {{#each fields}}
-        pub {{snakeCase name.value}}: GuestPort{{pascalCase name.value}},
+        pub {{snakeCase name.value}}: GuestPort{{pascalCase name.value}}<'a>,
     {{/each}}
     }
   {{/case}}

@@ -1,3 +1,7 @@
+/**********************************************
+***** This file is generated, do not edit *****
+***********************************************/
+
 use std::collections::HashMap;
 use std::sync::{
   Arc,
@@ -5,7 +9,6 @@ use std::sync::{
 };
 
 use async_trait::async_trait;
-use log::trace;
 use serde::{
   Deserialize,
   Serialize,
@@ -30,8 +33,8 @@ pub (crate) struct Inputs {
   {{/each}}
 }
 
-pub(crate) fn inputs_list() -> Vec<(String, String)> {
-    vec![{{#join fields ","}}("{{name.value}}".to_string(), "{{codegen-type type}}".to_string()){{/join}}]
+pub(crate) fn inputs_list() -> Vec<(&'static str, &'static str)> {
+    vec![{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}]
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
@@ -64,8 +67,8 @@ pub (crate) struct Outputs {
   {{/each}}
 }
 
-pub(crate) fn outputs_list() -> Vec<(String, String)> {
-    vec![{{#join fields ","}}("{{name.value}}".to_string(), "{{codegen-type type}}".to_string()){{/join}}]
+pub(crate) fn outputs_list() -> Vec<(&'static str, &'static str)> {
+    vec![{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}]
 }
 
 {{#each fields}}
@@ -115,18 +118,17 @@ impl VinoProviderComponent for Component {
   fn get_name(&self) -> String {
     format!("vino::{}", "{{namespace.name.value}}")
   }
-  fn get_input_ports(&self) -> Vec<(String, String)> {
+  fn get_input_ports(&self) -> Vec<(&'static str, &'static str)> {
     inputs_list()
   }
-  fn get_output_ports(&self) -> Vec<(String, String)> {
+  fn get_output_ports(&self) -> Vec<(&'static str, &'static str)> {
     outputs_list()
   }
   async fn job_wrapper(
     &self,
     context: ProviderContext<Self::Context>,
     data: HashMap<String, Vec<u8>>,
-  ) -> std::result::Result<PortStream, Box<dyn std::error::Error + Send + Sync>> {
-    trace!("Job passed data: {:?}", data);
+  ) -> Result<PortStream, Box<dyn std::error::Error + Send + Sync>> {
     let inputs = deserialize_inputs(&data).map_err(ProviderError::InputDeserializationError)?;
     let (outputs, stream) = get_outputs();
     let result = super::super::{{snakeCase namespace.name.value}}::job(inputs, outputs, context).await;

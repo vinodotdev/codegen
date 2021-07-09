@@ -15,9 +15,11 @@ export enum LANGUAGE {
 }
 
 export enum CODEGEN_TYPE {
+  ProviderBoilerplate = 'provider-boilerplate',
   ProviderComponent = 'provider-component',
   ProviderIntegration = 'provider-integration',
   WapcComponent = 'wapc-component',
+  WapcComponentModule = 'wapc-component-module',
   WapcLib = 'wapc-lib',
   WapcIntegration = 'wapc-integration',
 }
@@ -45,6 +47,28 @@ export function readFile(path: string): string {
   } catch (e) {
     throw new Error(`Could not read file at ${path}: ${e.message}`);
   }
+}
+
+export interface NormalizedFilename {
+  raw: string;
+  basename: string;
+  withoutExtension: string;
+  unhyphenated: string;
+  extension: string;
+}
+
+export function normalizeFilename(filename: string): NormalizedFilename {
+  const basename = path.basename(filename);
+  const extension = path.extname(filename);
+  const withoutExtension = basename.replace(extension, '');
+
+  return {
+    raw: filename,
+    extension,
+    basename,
+    withoutExtension,
+    unhyphenated: withoutExtension.replace('-', '_'),
+  };
 }
 
 export function getTemplate(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): string {
@@ -164,7 +188,9 @@ export function commitOutput(src: string, path?: string, options: CommitOptions 
         } else {
           debug(`Refusing to overwrite ${path}`);
           if (options.silent) return;
-          else throw new Error(`Refusing to overwrite ${path} without --force`);
+          else {
+            console.error(`${path} exists, to overwrite pass --force to the codegen or delete the file`);
+          }
         }
       }
     }

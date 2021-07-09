@@ -1,10 +1,5 @@
 mod generated;
-
-pub(crate) mod components {
-  {{#each schemas}}
-  pub(crate) mod {{filename}};
-  {{/each}}
-}
+mod components;
 
 #[no_mangle]
 pub fn wapc_init() {

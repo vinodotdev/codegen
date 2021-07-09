@@ -36,11 +36,16 @@ import { registerHelpers } from 'widl-template';
 const LANG = LANGUAGE.JSON;
 const TYPE = JSON_TYPE.Interface;
 
-export const command = `${TYPE} <schema_dir> [options]`;
+export const command = `${TYPE} <name> <schema_dir> [options]`;
 
 export const desc = 'Generate JSON representation of a WIDL file';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
+    .positional('name', {
+      demandOption: true,
+      type: 'string',
+      description: 'Path to directory containing WIDL schema files',
+    })
     .positional('schema_dir', {
       demandOption: true,
       type: 'string',
@@ -51,6 +56,7 @@ export const builder = (yargs: yargs.Argv): yargs.Argv => {
 };
 
 export interface Arguments extends CommonOutputOptions, CommonWidlOptions {
+  name: string;
   schema_dir: string;
 }
 
@@ -66,7 +72,7 @@ interface Component {
 
 interface Port {
   name: string;
-  type: string;
+  type_string: string;
 }
 
 interface HasName extends AbstractNode {
@@ -109,8 +115,14 @@ function interpret(doc: Document): Component {
 
   return {
     name: (namespace as NamespaceDefinition).name.value,
-    inputs: input_def.fields.map(field => distillType(types, field.type as Named)),
-    outputs: output_def.fields.map(field => distillType(types, field.type as Named)),
+    inputs: input_def.fields.map(field => ({
+      name: field.name.value,
+      type_string: distillType(types, field.type as Named),
+    })),
+    outputs: output_def.fields.map(field => ({
+      name: field.name.value,
+      type_string: distillType(types, field.type as Named),
+    })),
   };
 }
 
@@ -123,20 +135,18 @@ export function handler(args: Arguments): void {
 
   const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
 
-  const entries = files.map(file => {
+  const components = files.map(file => {
     const widlSrc = readFile(path.join(args.schema_dir, file));
     const tree = parse(widlSrc);
     const component = interpret(tree);
-    return [component.name, component];
+    return component;
   });
+  const providerSignature = {
+    name: args.name,
+    components,
+  };
 
-  const tree = Object.fromEntries(entries);
-
-  // const widlPath = args.interface;
-  // const widlSrc = readFile(widlPath);
-  // const root = args.root || path.dirname(widlPath || process.cwd());
-  // const tree = interpret(parse(widlSrc), root);
-  const generated = JSON.stringify(tree, null, 2);
+  const generated = JSON.stringify(providerSignature, null, 2);
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

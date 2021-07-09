@@ -18,11 +18,11 @@ import path from 'path';
 import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.ProviderIntegration;
+const TYPE = CODEGEN_TYPE.WapcIntegration;
 
 export const command = `${TYPE} <schema_dir> [options]`;
 
-export const desc = 'Generate component integration boilerplace for providers';
+export const desc = 'Generate boilerplace for WaPC WebAssembly components';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('schema_dir', {
@@ -31,7 +31,7 @@ export const builder = (yargs: yargs.Argv): yargs.Argv => {
       description: 'Path to WIDL schema directory',
     })
     .options(outputOpts(widlOpts({})))
-    .example(`rust ${TYPE} schema.widl`, 'Prints generated code to STDOUT');
+    .example(`${LANG} ${TYPE} schemas/`, 'Prints integration boilerplate code to STDOUT');
 };
 
 interface Arguments extends CommonWidlOptions, CommonOutputOptions {

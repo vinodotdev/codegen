@@ -10,10 +10,9 @@ import {
   outputOpts,
   normalizeFilename,
 } from '../../common';
-import path from 'path';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WapcComponent;
+const TYPE = CODEGEN_TYPE.ProviderBoilerplate;
 
 export const command = `${TYPE} <schema> [options]`;
 

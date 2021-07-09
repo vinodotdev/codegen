@@ -1,37 +1,33 @@
 import yargs from 'yargs';
-import { handlebars, parseWidl, registerHelpers } from 'widl-template';
+import { handlebars, registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,
   commitOutput,
   LANGUAGE,
-  readFile,
-  registerPartial,
   registerTypePartials,
-  widlOpts,
-  CommonWidlOptions,
   CommonOutputOptions,
   outputOpts,
+  CommonWidlOptions,
   normalizeFilename,
 } from '../../common';
-import path from 'path';
 import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.ProviderIntegration;
+const TYPE = CODEGEN_TYPE.WapcComponentModule;
 
 export const command = `${TYPE} <schema_dir> [options]`;
 
-export const desc = 'Generate component integration boilerplace for providers';
+export const desc = 'Generate boilerplate component module';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('schema_dir', {
       demandOption: true,
       type: 'string',
-      description: 'Path to WIDL schema directory',
+      description: 'The directory that holds your component schemas',
     })
-    .options(outputOpts(widlOpts({})))
-    .example(`rust ${TYPE} schema.widl`, 'Prints generated code to STDOUT');
+    .options(outputOpts({}))
+    .example(`${LANG} ${TYPE} schemas/`, 'Prints boilerplate components.rs to STDOUT');
 };
 
 interface Arguments extends CommonWidlOptions, CommonOutputOptions {
@@ -40,7 +36,6 @@ interface Arguments extends CommonWidlOptions, CommonOutputOptions {
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
-  registerPartial(LANG, 'expand-type');
 
   const options = {
     root: args.root,
@@ -49,11 +44,7 @@ export function handler(args: Arguments): void {
 
   const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
 
-  const schemas = files.map(file => {
-    const widlSrc = readFile(path.join(args.schema_dir, file));
-    const tree = parseWidl(widlSrc);
-    return { file: normalizeFilename(file), document: tree };
-  });
+  const schemas = files.map(normalizeFilename);
 
   const template = handlebars.compile(getTemplate(LANG, TYPE));
   const generated = template({ schemas });

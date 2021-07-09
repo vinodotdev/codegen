@@ -1,13 +1,8 @@
-mod generated;
-extern crate wapc_guest as guest;
 
-pub use generated::*;
+use wapc_guest::prelude::*;
 
-pub(crate) mod components {
-  pub(crate) mod validate;
-}
+use crate::generated::{{snakeCase schema.unhyphenated}}::*;
 
-#[no_mangle]
-pub fn wapc_init() {
-  generated::register_handlers();
+pub(crate) fn job(input: Inputs, output: Outputs) -> HandlerResult<()> {
+  Ok(())
 }

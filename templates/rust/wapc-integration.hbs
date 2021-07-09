@@ -1,4 +1,6 @@
-
+/**********************************************
+***** This file is generated, do not edit *****
+***********************************************/
 use wapc_guest::{
   register_function,
   HandlerResult,
@@ -12,7 +14,7 @@ use vino_codec::messagepack::{
 
 pub fn register_handlers() {
   {{#each schemas}}
-  Handlers::register_{{snakeCase filename}}(super::components::{{snakeCase filename}}::job);
+  Handlers::register_{{snakeCase file.unhyphenated}}(crate::components::{{snakeCase file.unhyphenated}}::job);
   {{/each}}
 }
 
@@ -22,9 +24,9 @@ pub struct Handlers {}
 #[cfg(feature = "guest")]
 impl Handlers {
 {{#each schemas}}
-    pub fn register_{{snakeCase filename}}(f: fn({{snakeCase filename}}::Inputs, {{snakeCase filename}}::Outputs) -> HandlerResult<()>) {
-        *{{upperCase filename}}.write().unwrap() = Some(f);
-        register_function(&"{{document.namespace.name.value}}", {{snakeCase filename}}_wrapper);
+    pub fn register_{{snakeCase file.unhyphenated}}(f: fn({{snakeCase file.unhyphenated}}::Inputs, {{snakeCase file.unhyphenated}}::Outputs) -> HandlerResult<()>) {
+        *{{upperCase file.unhyphenated}}.write().unwrap() = Some(f);
+        register_function("{{document.namespace.name.value}}", {{snakeCase file.unhyphenated}}_wrapper);
     }
 {{/each}}
 }
@@ -32,25 +34,26 @@ impl Handlers {
 #[cfg(feature = "guest")]
 lazy_static::lazy_static! {
 {{#each schemas}}
-static ref {{upperCase filename}}: std::sync::RwLock<Option<fn({{snakeCase filename}}::Inputs, {{snakeCase filename}}::Outputs) -> HandlerResult<()>>> = std::sync::RwLock::new(None);
+#[allow(clippy::type_complexity)]
+static ref {{upperCase file.unhyphenated}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
 {{/each}}
 }
 
 {{#each schemas}}
 #[cfg(feature = "guest")]
-fn {{snakeCase filename}}_wrapper(input_payload: &[u8]) -> CallResult {
-    use {{snakeCase filename}}::*;
+fn {{snakeCase file.unhyphenated}}_wrapper(input_payload: &[u8]) -> CallResult {
+    use {{snakeCase file.unhyphenated}}::*;
     let (inv_id, input_encoded): (String, InputEncoded) = deserialize(input_payload)?;
-    let outputs = get_outputs(inv_id);
+    let outputs = get_outputs(&inv_id);
     let inputs: Inputs = deserialize_inputs(input_encoded)?;
-    let lock = {{upperCase filename}}.read().unwrap().unwrap();
+    let lock = {{upperCase file.unhyphenated}}.read().unwrap().unwrap();
     let result = lock(inputs, outputs)?;
     Ok(serialize(result)?)
 }
 {{/each}}
 
 {{#each schemas}}
-pub (crate) mod {{snakeCase filename}} {
+pub (crate) mod {{snakeCase file.unhyphenated}} {
   use serde::{
     Deserialize,
     Serialize,
@@ -60,6 +63,8 @@ pub (crate) mod {{snakeCase filename}} {
   use vino_component::Packet;
 
   use super::*;
+
+  pub(crate) type JobSignature = fn(Inputs, Outputs) -> HandlerResult<()>;
 
 {{#with document}}
 {{#each definitions}}

@@ -10,28 +10,18 @@ import {
   outputOpts,
   CommonWidlOptions,
 } from '../../common';
-import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.WapcLib;
 
-export const command = `${TYPE} <schema_dir> [options]`;
+export const command = `${TYPE} [options]`;
 
-export const desc = 'Generate boilerplate component code';
+export const desc = 'Generate boilerplate component lib.rs';
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
-  return yargs
-    .positional('name', {
-      demandOption: true,
-      type: 'string',
-      description: 'The directory that holds your component schemas',
-    })
-    .options(outputOpts({}))
-    .example(`${LANG} ${TYPE} schemas/`, 'Prints boilerplate lib.rs to STDOUT');
+  return yargs.options(outputOpts({})).example(`${LANG} ${TYPE}`, 'Prints boilerplate lib.rs to STDOUT');
 };
 
-interface Arguments extends CommonWidlOptions, CommonOutputOptions {
-  schema_dir: string;
-}
+interface Arguments extends CommonWidlOptions, CommonOutputOptions {}
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
@@ -41,14 +31,8 @@ export function handler(args: Arguments): void {
   };
   registerHelpers(options);
 
-  const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
-
-  const schemas = files.map(file => {
-    return { filename: file.replace(/\.widl$/, '') };
-  });
-
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const generated = template({ schemas });
+  const generated = template({});
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }
