@@ -21,7 +21,7 @@ const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.WapcIntegration;
 
 export const command = `${TYPE} <schema_dir> [options]`;
-export const desc = 'Generate the WaPC & Vino integration code for all component schemas';
+export const desc = 'Generate the Vino & WaPC integration code for all component schemas';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs

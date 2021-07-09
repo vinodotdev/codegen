@@ -14,6 +14,10 @@ import {
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.WapcComponent;
 
+export const command = `${TYPE} <schema> [options]`;
+
+export const desc = 'Generate boilerplate for WaPC components';
+
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('schema', {
