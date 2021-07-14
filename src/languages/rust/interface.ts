@@ -18,10 +18,10 @@ import path from 'path';
 import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.ProviderIntegration;
+const TYPE = CODEGEN_TYPE.Interface;
 
 export const command = `${TYPE} <schema_dir> [options]`;
-export const desc = 'Generate the Vino integration code for all component schemas';
+export const desc = 'Generate source code for well-known interfaces';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs

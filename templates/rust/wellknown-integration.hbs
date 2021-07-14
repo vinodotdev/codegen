@@ -1,0 +1,36 @@
+/**********************************************
+***** This file is generated, do not edit *****
+***********************************************/
+
+use vino_provider::{VinoProviderComponent, ComponentSignature};
+
+
+pub(crate) fn get_component(
+    name: &str,
+) -> Option<Box<dyn VinoProviderComponent<Context = crate::State> + Sync + Send>> {
+    match name {
+      {{#each interface.components}}
+        "{{ name }}" => Some(Box::new(self::{{snakeCase name}}::Component::default())),
+      {{/each}}
+        _ => None,
+    }
+}
+
+pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
+  vec![
+  {{#each interface.components}}
+    ComponentSignature {
+      name: "{{name}}".to_owned(),
+      inputs : {{snakeCase @root.interface.name}}::{{snakeCase name}}::inputs_list().into_iter().map(From::from).collect(),
+      outputs : {{snakeCase @root.interface.name}}::{{snakeCase name}}::outputs_list().into_iter().map(From::from).collect(),
+    },
+  {{/each}}
+  ]
+}
+
+{{#each interface.components}}
+pub (crate) mod {{snakeCase name}} {
+  use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
+  {{> component . }}
+}
+{{/each}}

@@ -11,10 +11,10 @@ use serde::{
   Serialize,
 };
 use vino_codec::messagepack::deserialize;
-use vino_provider::error::ProviderError;
 use vino_provider::{
   Context as ProviderContext,
   VinoProviderComponent,
+  error::ProviderComponentError
 };
 use vino_rpc::port::{
   Port,
@@ -125,13 +125,13 @@ impl VinoProviderComponent for Component {
     &self,
     context: ProviderContext<Self::Context>,
     data: HashMap<String, Vec<u8>>,
-  ) -> Result<PortStream, Box<dyn std::error::Error + Send + Sync>> {
-    let inputs = deserialize_inputs(&data).map_err(ProviderError::InputDeserializationError)?;
+  ) -> Result<PortStream, Box<ProviderComponentError>> {
+    let inputs = deserialize_inputs(&data).map_err(|e| ProviderComponentError::new(format!("Input deserialization error: {}", e.to_string())))?;
     let (outputs, stream) = get_outputs();
     let result = crate::components::{{snakeCase namespace.name.value}}::job(inputs, outputs, context).await;
     match result {
       Ok(_) => Ok(stream),
-      Err(e) => Err(ProviderError::JobError(format!("Job failed: {}", e.to_string())).into()),
+      Err(e) => Err(Box::new(ProviderComponentError::new(format!("Job failed: {}", e.to_string())))),
     }
   }
 }

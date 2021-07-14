@@ -1,0 +1,9 @@
+/**********************************************
+***** This file is generated, do not edit *****
+***********************************************/
+
+{{#each schemas}}
+pub mod {{snakeCase file.unhyphenated}} {
+  {{> component document }}
+}
+{{/each}}

@@ -1,5 +1,5 @@
 import yargs from 'yargs';
-import { handlebars, parseWidl, registerHelpers } from 'widl-template';
+import { handlebars, registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,
@@ -12,30 +12,27 @@ import {
   CommonWidlOptions,
   CommonOutputOptions,
   outputOpts,
-  normalizeFilename,
 } from '../../common';
-import path from 'path';
-import fs from 'fs';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.ProviderIntegration;
+const TYPE = CODEGEN_TYPE.WellKnownComponentModule;
 
-export const command = `${TYPE} <schema_dir> [options]`;
-export const desc = 'Generate the Vino integration code for all component schemas';
+export const command = `${TYPE} <interface> [options]`;
+export const desc = 'Generate the Vino integration code for well-known interface schemas';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
-    .positional('schema_dir', {
+    .positional('interface', {
       demandOption: true,
       type: 'string',
-      description: 'Path to WIDL schema directory',
+      description: 'Path to well-known interface schema (JSON)',
     })
     .options(outputOpts(widlOpts({})))
-    .example(`rust ${TYPE} schemas/`, 'Prints generated code to STDOUT');
+    .example(`rust ${TYPE} interface.json`, 'Prints generated code to STDOUT');
 };
 
 interface Arguments extends CommonWidlOptions, CommonOutputOptions {
-  schema_dir: string;
+  interface: string;
 }
 
 export function handler(args: Arguments): void {
@@ -46,17 +43,11 @@ export function handler(args: Arguments): void {
     root: args.root,
   };
   registerHelpers(options);
-
-  const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
-
-  const schemas = files.map(file => {
-    const widlSrc = readFile(path.join(args.schema_dir, file));
-    const tree = parseWidl(widlSrc);
-    return { file: normalizeFilename(file), document: tree };
-  });
+  const interfaceJson = readFile(args.interface);
+  const iface = JSON.parse(interfaceJson);
 
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const generated = template({ schemas });
+  const generated = template({ interface: iface });
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }
