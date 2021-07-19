@@ -14,7 +14,7 @@ use vino_component::codec::messagepack::{
 
 pub fn register_handlers() {
   {{#each schemas}}
-  Handlers::register_{{snakeCase file.unhyphenated}}(crate::components::{{snakeCase file.unhyphenated}}::job);
+  Handlers::register_{{snakeCase document.namespace.name.value}}(crate::components::{{snakeCase file.unhyphenated}}::job);
   {{/each}}
 }
 
@@ -24,9 +24,9 @@ pub struct Handlers {}
 #[cfg(feature = "guest")]
 impl Handlers {
 {{#each schemas}}
-    pub fn register_{{snakeCase file.unhyphenated}}(f: fn({{snakeCase file.unhyphenated}}::Inputs, {{snakeCase file.unhyphenated}}::Outputs) -> HandlerResult<()>) {
-        *{{upperCase file.unhyphenated}}.write().unwrap() = Some(f);
-        register_function("{{document.namespace.name.value}}", {{snakeCase file.unhyphenated}}_wrapper);
+    pub fn register_{{snakeCase document.namespace.name.value}}(f: fn({{snakeCase file.unhyphenated}}::Inputs, {{snakeCase file.unhyphenated}}::Outputs) -> HandlerResult<()>) {
+        *{{upperCase document.namespace.name.value}}.write().unwrap() = Some(f);
+        register_function("{{document.namespace.name.value}}", {{snakeCase document.namespace.name.value}}_wrapper);
     }
 {{/each}}
 }
@@ -35,18 +35,18 @@ impl Handlers {
 lazy_static::lazy_static! {
 {{#each schemas}}
 #[allow(clippy::type_complexity)]
-static ref {{upperCase file.unhyphenated}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
+static ref {{upperCase document.namespace.name.value}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
 {{/each}}
 }
 
 {{#each schemas}}
 #[cfg(feature = "guest")]
-fn {{snakeCase file.unhyphenated}}_wrapper(input_payload: &[u8]) -> CallResult {
+fn {{snakeCase document.namespace.name.value}}_wrapper(input_payload: &[u8]) -> CallResult {
     use {{snakeCase file.unhyphenated}}::*;
     let (inv_id, input_encoded): (String, InputEncoded) = deserialize(input_payload)?;
     let outputs = get_outputs(&inv_id);
     let inputs: Inputs = deserialize_inputs(input_encoded)?;
-    let lock = {{upperCase file.unhyphenated}}.read().unwrap().unwrap();
+    let lock = {{upperCase document.namespace.name.value}}.read().unwrap().unwrap();
     let result = lock(inputs, outputs)?;
     Ok(serialize(result)?)
 }
