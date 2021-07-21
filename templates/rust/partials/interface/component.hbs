@@ -9,7 +9,7 @@ use serde::{
   Deserialize,
   Serialize,
 };
-use vino_codec::messagepack::deserialize;
+use vino_codec::{Error, messagepack::deserialize};
 use vino_rpc::port::{
   Port,
   PortStream,
@@ -44,7 +44,7 @@ pub  fn deserialize_inputs(
 > {
     Ok(Inputs {
       {{#each fields}}
-        {{snakeCase name.value}}: deserialize(map.get("{{name.value}}").unwrap())?,
+        {{snakeCase name.value}}: deserialize(map.get("{{name.value}}").ok_or_else(|| Error::MissingInput("{{name.value}}".to_owned()))?)?,
       {{/each}}
     })
 }

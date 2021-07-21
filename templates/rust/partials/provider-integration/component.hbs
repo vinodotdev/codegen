@@ -49,7 +49,7 @@ pub (crate) fn deserialize_inputs(
 > {
     Ok(Inputs {
       {{#each fields}}
-        {{snakeCase name.value}}: deserialize(map.get("{{name.value}}").unwrap())?,
+        {{snakeCase name.value}}: deserialize(map.get("{{name.value}}").ok_or_else(|| ProviderComponentError::new(format!("Input data for '{}'' not found in passed payload", "{{name.value}}")))?)?,
       {{/each}}
     })
 }
