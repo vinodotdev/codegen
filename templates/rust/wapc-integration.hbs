@@ -25,7 +25,7 @@ pub struct Handlers {}
 impl Handlers {
 {{#each schemas}}
     pub fn register_{{snakeCase document.namespace.name.value}}(f: fn({{snakeCase file.unhyphenated}}::Inputs, {{snakeCase file.unhyphenated}}::Outputs) -> HandlerResult<()>) {
-        *{{upperCase document.namespace.name.value}}.write().unwrap() = Some(f);
+        *{{upperCase (snakeCase document.namespace.name.value)}}.write().unwrap() = Some(f);
         register_function("{{document.namespace.name.value}}", {{snakeCase document.namespace.name.value}}_wrapper);
     }
 {{/each}}
@@ -35,7 +35,7 @@ impl Handlers {
 lazy_static::lazy_static! {
 {{#each schemas}}
 #[allow(clippy::type_complexity)]
-static ref {{upperCase document.namespace.name.value}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
+static ref {{upperCase (snakeCase document.namespace.name.value)}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
 {{/each}}
 }
 
@@ -46,7 +46,7 @@ fn {{snakeCase document.namespace.name.value}}_wrapper(input_payload: &[u8]) -> 
     let (inv_id, input_encoded): (String, InputEncoded) = deserialize(input_payload)?;
     let outputs = get_outputs(&inv_id);
     let inputs: Inputs = deserialize_inputs(input_encoded)?;
-    let lock = {{upperCase document.namespace.name.value}}.read().unwrap().unwrap();
+    let lock = {{upperCase (snakeCase document.namespace.name.value)}}.read().unwrap().unwrap();
     let result = lock(inputs, outputs)?;
     Ok(serialize(result)?)
 }
