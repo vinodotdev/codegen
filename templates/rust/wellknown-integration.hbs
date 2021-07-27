@@ -30,6 +30,7 @@ pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
 
 {{#each interface.components}}
 pub (crate) mod {{snakeCase name}} {
+  #![allow(unused)]
   use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
   {{> component . }}
 }
