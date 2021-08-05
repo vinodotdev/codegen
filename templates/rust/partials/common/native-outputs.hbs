@@ -22,7 +22,7 @@ pub struct {{pascalCase name.value}}PortSender {
 impl Default for {{pascalCase name.value}}PortSender {
     fn default() -> Self {
         Self {
-            port: PortChannel::new("{{name.value}}".into()),
+            port: PortChannel::new("{{name.value}}"),
         }
     }
 }
