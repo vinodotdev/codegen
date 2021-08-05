@@ -1,0 +1,56 @@
+
+#[derive(Debug, Default)]
+pub  struct Outputs {
+  {{#each fields}}
+    pub {{snakeCase name.value}}: {{pascalCase name.value}}PortSender,
+  {{/each}}
+}
+
+static OUTPUTS_LIST: &[(&str, &str)] = &[{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}];
+
+#[must_use]
+pub fn outputs_list() -> &'static [(&'static str, &'static str)] {
+    OUTPUTS_LIST
+}
+
+{{#each fields}}
+#[derive(Debug)]
+pub struct {{pascalCase name.value}}PortSender {
+    port: PortChannel,
+}
+
+impl Default for {{pascalCase name.value}}PortSender {
+    fn default() -> Self {
+        Self {
+            port: PortChannel::new("{{name.value}}".into()),
+        }
+    }
+}
+impl PortSender for {{pascalCase name.value}}PortSender {
+    type PayloadType = {{>expand-type type}};
+
+    fn get_port(&self) -> Result<&PortChannel, ProviderError> {
+      if self.port.is_closed() {
+        Err(ProviderError::SendChannelClosed)
+      } else {
+        Ok(&self.port)
+      }
+    }
+
+    fn get_port_name(&self) -> String {
+      self.port.name.clone()
+    }
+}
+{{/each}}
+
+#[must_use]
+pub fn get_outputs() -> (Outputs, TransportStream) {
+    let mut outputs = Outputs::default();
+    let mut ports = vec![
+    {{#each fields}}
+    &mut outputs.{{snakeCase name.value}}.port,
+    {{/each}}
+    ];
+    let stream = PortChannel::merge_all(&mut ports);
+    (outputs, stream)
+}

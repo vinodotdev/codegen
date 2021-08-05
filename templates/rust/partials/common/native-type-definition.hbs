@@ -2,13 +2,12 @@
 
 {{#switch name.value}}
   {{#case 'Inputs'}}
-    {{> Inputs . }}
+    {{> native-inputs . }}
   {{/case}}
   {{#case 'Outputs'}}
-    {{> Outputs . }}
+    {{> native-outputs . }}
   {{/case}}
   {{#default}}
-    #[cfg(feature = "guest")]
     #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
     pub struct {{pascalCase name.value}} {
       {{#each fields }}
@@ -18,3 +17,4 @@
     }
   {{/default}}
 {{/switch}}
+

@@ -1,0 +1,27 @@
+fn get_outputs() -> Outputs {
+  Outputs {
+  {{#each fields}}
+    {{snakeCase name.value}}: GuestPort{{pascalCase name.value}} { },
+  {{/each}}
+  }
+}
+
+{{#each fields}}
+#[derive(Debug, PartialEq, Clone)]
+pub struct GuestPort{{pascalCase name.value}} {}
+
+impl PortSender for GuestPortOutput {
+  type PayloadType = {{> expand-type type}};
+  fn get_name(&self) -> String {
+    "{{name.value}}".to_string()
+  }
+}
+{{/each}}
+
+#[cfg(feature = "guest")]
+#[derive(Debug)]
+pub struct Outputs {
+{{#each fields}}
+    pub {{snakeCase name.value}}: GuestPort{{pascalCase name.value}},
+{{/each}}
+}

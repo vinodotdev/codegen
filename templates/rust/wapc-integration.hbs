@@ -1,77 +1,97 @@
 /**********************************************
 ***** This file is generated, do not edit *****
 ***********************************************/
-use wapc_guest::{
-  register_function,
-  HandlerResult,
-  CallResult,host_call
-};
 
-use vino_component::codec::messagepack::{
-  deserialize,
-  serialize,
-};
+use vino_provider::wasm::prelude::*;
 
-pub fn register_handlers() {
-  {{#each schemas}}
-  Handlers::register_{{snakeCase document.namespace.name.value}}(crate::components::{{snakeCase file.unhyphenated}}::job);
-  {{/each}}
-}
+type Result<T> = std::result::Result<T, Error>;
 
-#[cfg(feature = "guest")]
-pub struct Handlers {}
+#[no_mangle]
+pub(crate) extern "C" fn __guest_call(op_len: i32, req_len: i32) -> i32 {
+  use std::slice;
 
-#[cfg(feature = "guest")]
-impl Handlers {
-{{#each schemas}}
-    pub fn register_{{snakeCase document.namespace.name.value}}(f: fn({{snakeCase file.unhyphenated}}::Inputs, {{snakeCase file.unhyphenated}}::Outputs) -> HandlerResult<()>) {
-        *{{upperCase (snakeCase document.namespace.name.value)}}.write().unwrap() = Some(f);
-        register_function("{{document.namespace.name.value}}", {{snakeCase document.namespace.name.value}}_wrapper);
+  let buf: Vec<u8> = Vec::with_capacity(req_len as _);
+  let req_ptr = buf.as_ptr();
+
+  let opbuf: Vec<u8> = Vec::with_capacity(op_len as _);
+  let op_ptr = opbuf.as_ptr();
+
+  let (slice, op) = unsafe {
+    wapc::__guest_request(op_ptr, req_ptr);
+    (
+      slice::from_raw_parts(req_ptr, req_len as _),
+      slice::from_raw_parts(op_ptr, op_len as _),
+    )
+  };
+
+  let op_str = ::std::str::from_utf8(op).unwrap();
+
+  match Dispatcher::dispatch(op_str, slice) {
+    Ok(response) => {
+      unsafe { wapc::__guest_response(response.as_ptr(), response.len()) }
+      1
     }
-{{/each}}
+    Err(e) => {
+      let errmsg = e.to_string();
+      unsafe {
+        wapc::__guest_error(errmsg.as_ptr(), errmsg.len() as _);
+      }
+      0
+    }
+  }
 }
 
-#[cfg(feature = "guest")]
-lazy_static::lazy_static! {
+static  ALL_COMPONENTS: &[&str] = &[
 {{#each schemas}}
-#[allow(clippy::type_complexity)]
-static ref {{upperCase (snakeCase document.namespace.name.value)}}: std::sync::RwLock<Option<{{snakeCase file.unhyphenated}}::JobSignature>> = std::sync::RwLock::new(None);
+"{{document.namespace.name.value}}",
 {{/each}}
-}
+];
 
-{{#each schemas}}
-#[cfg(feature = "guest")]
-fn {{snakeCase document.namespace.name.value}}_wrapper(input_payload: &[u8]) -> CallResult {
-    use {{snakeCase file.unhyphenated}}::*;
-    let (inv_id, input_encoded): (String, InputEncoded) = deserialize(input_payload)?;
-    let outputs = get_outputs(&inv_id);
-    let inputs: Inputs = deserialize_inputs(input_encoded)?;
-    let lock = {{upperCase (snakeCase document.namespace.name.value)}}.read().unwrap().unwrap();
-    let result = lock(inputs, outputs)?;
-    Ok(serialize(result)?)
+pub struct Dispatcher {}
+impl Dispatch for Dispatcher {
+  fn dispatch(op: &str, payload: &[u8]) -> CallResult {
+    let payload = IncomingPayload::from_buffer(payload)?;
+    let result = match op {
+      {{#each schemas}}
+        "{{document.namespace.name.value}}" => {{snakeCase file.unhyphenated}}::Component::new().execute(&payload),
+      {{/each}}
+      _ => Err(Error::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
+    }?;
+    Ok(serialize(&result)?)
+  }
 }
-{{/each}}
 
 {{#each schemas}}
 pub (crate) mod {{snakeCase file.unhyphenated}} {
+  use crate::components::{{snakeCase file.unhyphenated}} as implementation;
+
   use serde::{
     Deserialize,
     Serialize,
   };
-
-  use vino_component::v0::Payload;
-  use vino_component::Packet;
+  pub use vino_provider::wasm::{JobResult, console_log, PortSender};
 
   use super::*;
 
-  pub(crate) type JobSignature = fn(Inputs, Outputs) -> HandlerResult<()>;
+  pub(crate) struct Component {}
+
+  impl Component {
+    pub fn new() -> Self {
+      Self { }
+    }
+  }
+  impl WapcComponent for Component {
+    fn execute(&self, payload: &IncomingPayload) -> JobResult {
+      let inputs = populate_inputs(payload)?;
+      let outputs = get_outputs();
+      implementation::job(inputs, outputs)
+    }
+  }
 
 {{#with document}}
 {{#each definitions}}
 {{#switch kind}}
-  {{#case "NamespaceDefinition"}}
-  // Implementation for {{name.value}}
-  {{/case}}
+  {{#case "NamespaceDefinition"}}{{/case}}
   {{#case "TypeDefinition"}}
     {{#switch name.value}}
         {{> TypeDefinition .}}
@@ -83,7 +103,6 @@ pub (crate) mod {{snakeCase file.unhyphenated}} {
   {{/default}}
 {{/switch}}
 {{/each}}
-
 {{/with}}
 }
 {{/each}}

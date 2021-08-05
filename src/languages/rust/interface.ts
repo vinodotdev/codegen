@@ -6,7 +6,6 @@ import {
   commitOutput,
   LANGUAGE,
   readFile,
-  registerPartial,
   registerTypePartials,
   widlOpts,
   CommonWidlOptions,
@@ -40,7 +39,6 @@ interface Arguments extends CommonWidlOptions, CommonOutputOptions {
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
-  registerPartial(LANG, 'expand-type');
 
   const options = {
     root: args.root,

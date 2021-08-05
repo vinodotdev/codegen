@@ -1,11 +1,11 @@
-use vino_provider::{Context, error::ProviderComponentError};
+use vino_provider::native::prelude::*;
 
 use crate::generated::{{snakeCase schema.unhyphenated}}::*;
 
 pub(crate) async fn job(
   input: Inputs,
   output: Outputs,
-  _context: Context<crate::State>,
-) -> Result<(), Box<ProviderComponentError>> {
+  _context: crate::Context,
+) -> Result<(), Box<NativeComponentError>> {
   Ok(())
 }

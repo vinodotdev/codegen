@@ -88,6 +88,7 @@ export function registerPartial(language: LANGUAGE, partial: string): void {
 }
 
 export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): void {
+  registerCommonPartials(language);
   const relativeDir = path.join(language, 'partials', type);
   const dir = path.join(findroot(__dirname), 'templates', relativeDir);
   debug(`Looking for partials in ${dir}`);
@@ -100,6 +101,25 @@ export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WI
     const exists = fs.existsSync(partialPath);
     if (exists) {
       debug(`Registering partial for ${language}.${type}`);
+      const partialSource = readFile(partialPath);
+      handlebars.registerPartial(name, partialSource);
+    }
+  }
+}
+
+export function registerCommonPartials(language: LANGUAGE): void {
+  const relativeDir = path.join(language, 'partials', 'common');
+  const dir = path.join(findroot(__dirname), 'templates', relativeDir);
+  debug(`Looking for partials in ${dir}`);
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const name = file.replace(path.extname(`${file}.hbs`), '');
+    const partialPath = path.join(dir, file);
+    debug(`Loading partial ${partialPath}`);
+    const exists = fs.existsSync(partialPath);
+    if (exists) {
+      debug(`Registering common partial for ${language}: ${name}`);
       const partialSource = readFile(partialPath);
       handlebars.registerPartial(name, partialSource);
     }

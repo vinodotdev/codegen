@@ -1,0 +1,17 @@
+
+fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs> {
+  Ok(Inputs {
+    {{#each fields }}
+    {{snakeCase name.value}}: deserialize(payload.get("{{name.value}}")?)?,
+    {{/each}}
+  })
+}
+
+#[cfg(feature = "guest")]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+pub(crate) struct Inputs {
+{{#each fields }}
+  #[serde(rename = "{{name.value}}")]
+  pub {{snakeCase name.value}}: {{> expand-type type}},
+{{/each}}
+}

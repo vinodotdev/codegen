@@ -3,7 +3,40 @@
 ***********************************************/
 
 {{#each schemas}}
-pub mod {{snakeCase file.unhyphenated}} {
-  {{> component document }}
+  pub mod {{snakeCase file.unhyphenated}} {
+  use serde::{
+    Deserialize,
+    Serialize,
+  };
+
+  pub use vino_provider::native::prelude::*;
+
+  {{#with document}}
+
+  #[must_use]
+  pub fn signature() -> ComponentSignature {
+    ComponentSignature {
+      name: "{{namespace.name.value}}".to_owned(),
+      inputs : PortSignature::from_list(inputs_list()),
+      outputs : PortSignature::from_list(outputs_list()),
+    }
+  }
+
+  {{#each definitions}}
+  {{#switch kind}}
+    {{#case "NamespaceDefinition"}}{{/case}}
+    {{#case "TypeDefinition"}}
+      {{#switch name.value}}
+          {{> native-type-definition .}}
+      {{/switch}}
+    {{/case}}
+    {{#default}}
+      {{debug .}}
+      {{panic "WIDL Node not yet handled"}}
+    {{/default}}
+  {{/switch}}
+  {{/each}}
+  {{/with}}
+
 }
 {{/each}}

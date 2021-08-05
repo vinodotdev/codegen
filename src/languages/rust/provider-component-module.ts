@@ -10,6 +10,7 @@ import {
   outputOpts,
   CommonWidlOptions,
   normalizeFilename,
+  registerCommonPartials,
 } from '../../common';
 import fs from 'fs';
 

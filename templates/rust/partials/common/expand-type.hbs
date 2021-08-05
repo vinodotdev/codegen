@@ -8,7 +8,7 @@
     {{/switch}}
   {{/case}}
   {{#case "MapType"}}
-    HashMap<{{> expand-type keyType}}, {{> expand-type valueType}}>
+    std::collections::HashMap<{{> expand-type keyType}}, {{> expand-type valueType}}>
   {{/case}}
   {{#case "ListType"}}
     Vec<{{> expand-type type}}>
