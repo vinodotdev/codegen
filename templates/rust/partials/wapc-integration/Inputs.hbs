@@ -7,7 +7,6 @@ fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs> {
   })
 }
 
-#[cfg(feature = "guest")]
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub(crate) struct Inputs {
 {{#each fields }}

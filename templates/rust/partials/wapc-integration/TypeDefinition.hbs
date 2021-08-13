@@ -8,7 +8,6 @@
     {{> Outputs . }}
   {{/case}}
   {{#default}}
-    #[cfg(feature = "guest")]
     #[derive(Debug, PartialEq, Deserialize, Serialize, Default, Clone)]
     pub struct {{pascalCase name.value}} {
       {{#each fields }}
