@@ -73,10 +73,17 @@ pub (crate) mod {{snakeCase file.unhyphenated}} {
     ) -> Result<TransportStream, Box<NativeComponentError>> {
       let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(format!("Input deserialization error: {}", e.to_string())))?;
       let (outputs, stream) = get_outputs();
-      let result = crate::components::{{snakeCase namespace.name.value}}::job(inputs, outputs, context).await;
+      let result = tokio::spawn(crate::components::{{snakeCase namespace.name.value}}::job(inputs, outputs, context))
+        .await
+        .map_err(|e| {
+          Box::new(NativeComponentError::new(format!(
+            "Component panicked: {}",
+            e
+          )))
+        })?;
       match result {
         Ok(_) => Ok(stream),
-        Err(e) => Err(Box::new(NativeComponentError::new(format!("Job failed: {}", e.to_string())))),
+        Err(e) => Err(Box::new(NativeComponentError::new(e.to_string()))),
       }
     }
   }
