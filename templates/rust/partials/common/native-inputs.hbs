@@ -15,6 +15,16 @@ pub struct Inputs {
 {{/each}}
 }
 
+impl From<Inputs> for TransportMap {
+  fn from(inputs: Inputs) -> TransportMap {
+    let mut map = TransportMap::new();
+    {{#each fields }}
+    map.insert("{{snakeCase name.value}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase name.value}}));
+    {{/each}}
+    map
+  }
+}
+
 static INPUTS_LIST: &[(&str, &str)] = &[{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}];
 
 #[must_use]

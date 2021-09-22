@@ -10,7 +10,7 @@ fn get_outputs() -> Outputs {
 #[derive(Debug, PartialEq, Clone)]
 pub struct GuestPort{{pascalCase name.value}} {}
 
-impl PortSender for GuestPortOutput {
+impl PortSender for GuestPort{{pascalCase name.value}} {
   type PayloadType = {{> expand-type type}};
   fn get_name(&self) -> String {
     "{{name.value}}".to_string()
