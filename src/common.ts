@@ -3,7 +3,6 @@ import path from 'path';
 import findroot from 'find-root';
 import DEBUG from 'debug';
 import { handlebars } from 'widl-template';
-import { ast } from '@wapc/widl';
 import { AbstractNode, Kind, ListType, MapType, Named, Optional } from '@wapc/widl/ast';
 import yargs from 'yargs';
 export const debug = DEBUG('vino-codegen');
@@ -47,8 +46,8 @@ export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.WapcIntegration;
 export function readFile(path: string): string {
   try {
     return fs.readFileSync(path, 'utf-8');
-  } catch (e) {
-    throw new Error(`Could not read file at ${path}: ${e.message}`);
+  } catch (e: unknown) {
+    throw new Error(`Could not read file at ${path}: ${e}`);
   }
 }
 
@@ -210,7 +209,7 @@ export function commitOutput(src: string, path?: string, options: CommitOptions 
           debug(`Refusing to overwrite ${path}`);
           if (options.silent) return;
           else {
-            console.error(`${path} exists, to overwrite pass --force to the codegen or delete the file`);
+            debug(`${path} exists, to overwrite pass --force to the codegen or delete the file`);
             return;
           }
         }

@@ -1,13 +1,18 @@
 
+#[cfg(any(feature = "native", feature = "wasm"))]
 pub fn populate_inputs(mut payload: TransportMap) -> Result<Inputs, TransportError> {
   Ok(Inputs {
     {{#each fields }}
-    {{snakeCase name.value}}: payload.consume("{{name.value}}")?,
+    {{#ifCond type.name.value "==" "raw"}}
+      {{snakeCase name.value}}: payload.consume_raw("{{name.value}}")?.into(),
+    {{else}}
+      {{snakeCase name.value}}: payload.consume("{{name.value}}")?,
+    {{/ifCond}}
     {{/each}}
   })
 }
 
-#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Inputs {
 {{#each fields }}
   #[serde(rename = "{{name.value}}")]
@@ -15,19 +20,28 @@ pub struct Inputs {
 {{/each}}
 }
 
+#[cfg(any(feature = "native", feature = "wasm"))]
 impl From<Inputs> for TransportMap {
   fn from(inputs: Inputs) -> TransportMap {
     let mut map = TransportMap::new();
     {{#each fields }}
-    map.insert("{{snakeCase name.value}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase name.value}}));
+    {{#ifCond type.name.value "==" "raw"}}
+      map.insert("{{snakeCase name.value}}".to_owned(), inputs.{{snakeCase name.value}}.into());
+    {{else}}
+      map.insert("{{snakeCase name.value}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase name.value}}));
+    {{/ifCond}}
+
     {{/each}}
     map
   }
 }
 
-static INPUTS_LIST: &[(&str, &str)] = &[{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}];
-
 #[must_use]
-pub fn inputs_list() -> &'static [(&'static str, &'static str)] {
-    INPUTS_LIST
+#[cfg(any(feature = "native", feature = "wasm"))]
+pub fn inputs_list() -> HashMap<String, TypeSignature> {
+  let mut map = HashMap::new();
+  {{#each fields}}
+    map.insert("{{name.value}}".to_owned(),{{> type-signature type}});
+  {{/each}}
+  map
 }

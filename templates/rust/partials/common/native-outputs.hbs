@@ -1,24 +1,30 @@
 
 #[derive(Debug, Default)]
-pub  struct Outputs {
+#[cfg(feature = "provider")]
+pub struct OutputPorts {
   {{#each fields}}
     pub {{snakeCase name.value}}: {{pascalCase name.value}}PortSender,
   {{/each}}
 }
 
-static OUTPUTS_LIST: &[(&str, &str)] = &[{{#join fields ","}}("{{name.value}}", "{{codegen-type type}}"){{/join}}];
-
 #[must_use]
-pub fn outputs_list() -> &'static [(&'static str, &'static str)] {
-    OUTPUTS_LIST
+#[cfg(any(feature = "native", feature = "wasm"))]
+pub fn outputs_list() -> HashMap<String, TypeSignature> {
+  let mut map = HashMap::new();
+  {{#each fields}}
+    map.insert("{{name.value}}".to_owned(),{{> type-signature type}});
+  {{/each}}
+  map
 }
 
 {{#each fields}}
 #[derive(Debug)]
+#[cfg(feature = "provider")]
 pub struct {{pascalCase name.value}}PortSender {
     port: PortChannel,
 }
 
+#[cfg(feature = "provider")]
 impl Default for {{pascalCase name.value}}PortSender {
     fn default() -> Self {
         Self {
@@ -26,9 +32,9 @@ impl Default for {{pascalCase name.value}}PortSender {
         }
     }
 }
-impl PortSender for {{pascalCase name.value}}PortSender {
-    type PayloadType = {{>expand-type type}};
 
+#[cfg(feature = "provider")]
+impl PortSender for {{pascalCase name.value}}PortSender {
     fn get_port(&self) -> Result<&PortChannel, ProviderError> {
       if self.port.is_closed() {
         Err(ProviderError::SendChannelClosed)
@@ -44,8 +50,9 @@ impl PortSender for {{pascalCase name.value}}PortSender {
 {{/each}}
 
 #[must_use]
-pub fn get_outputs() -> (Outputs, TransportStream) {
-    let mut outputs = Outputs::default();
+#[cfg(feature = "provider")]
+pub fn get_outputs() -> (OutputPorts, TransportStream) {
+    let mut outputs = OutputPorts::default();
     let mut ports = vec![
     {{#each fields}}
     &mut outputs.{{snakeCase name.value}}.port,
@@ -53,4 +60,46 @@ pub fn get_outputs() -> (Outputs, TransportStream) {
     ];
     let stream = PortChannel::merge_all(&mut ports);
     (outputs, stream)
+}
+
+
+#[cfg(all(feature = "guest"))]
+#[allow(missing_debug_implementations)]
+pub struct Outputs {
+  packets: ProviderOutput
+}
+
+#[cfg(all(feature = "native", feature = "guest"))]
+impl Outputs {
+  {{#each fields}}
+    pub async fn {{snakeCase name.value}}(&mut self)-> Result<PortOutput<{{> expand-type type }}>, ProviderError> {
+      let packets = self.packets.take("{{name.value}}").await;
+      Ok(PortOutput::new("{{name.value}}".to_owned(), packets))
+    }
+  {{/each}}
+}
+
+#[cfg(all(feature = "wasm", feature = "guest"))]
+impl Outputs {
+  {{#each fields}}
+    pub fn {{snakeCase name.value}}(&mut self)-> Result<PortOutput, WasmError> {
+      let packets = self.packets.take("{{name.value}}").ok_or_else(|| WasmError::ResponseMissing("{{name.value}}".to_owned()))?;
+      Ok(PortOutput::new("{{name.value}}".to_owned(), packets))
+    }
+  {{/each}}
+}
+
+#[cfg(all(feature = "wasm", feature = "guest"))]
+impl From<ProviderOutput> for Outputs {
+  fn from(packets: ProviderOutput) -> Self {
+    Self{packets}
+  }
+}
+
+
+#[cfg(all(feature = "native", feature = "guest"))]
+impl From<BoxedTransportStream> for Outputs {
+  fn from(stream: BoxedTransportStream) -> Self {
+    Self{packets: ProviderOutput::new(stream)}
+  }
 }

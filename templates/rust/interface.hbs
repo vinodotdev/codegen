@@ -8,17 +8,21 @@
     Deserialize,
     Serialize,
   };
+  use std::collections::HashMap;
 
+  #[cfg(feature = "native")]
   pub use vino_provider::native::prelude::*;
+  #[cfg(feature = "wasm")]
+  pub use vino_provider::wasm::prelude::*;
 
   {{#with document}}
 
-  #[must_use]
+  #[cfg(any(feature = "native", feature = "wasm"))]
   pub fn signature() -> ComponentSignature {
     ComponentSignature {
       name: "{{namespace.name.value}}".to_owned(),
-      inputs : PortSignature::from_list(inputs_list()),
-      outputs : PortSignature::from_list(outputs_list()),
+      inputs : inputs_list().into(),
+      outputs : outputs_list().into(),
     }
   }
 

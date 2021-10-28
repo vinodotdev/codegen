@@ -5,7 +5,6 @@ import {
   registerTypePartials,
   JSON_TYPE,
   readFile,
-  codegen,
   outputOpts,
   widlOpts,
   CommonOutputOptions,
@@ -19,19 +18,25 @@ import {
   Annotation,
   Definition,
   Document,
-  FieldDefinition,
-  ImportDefinition,
-  InterfaceDefinition,
   Kind,
   ListType,
   MapType,
   Named,
   NamespaceDefinition,
-  StringValue,
+  Optional,
+  Type,
   TypeDefinition,
 } from '@wapc/widl/ast';
 
 import { registerHelpers } from 'widl-template';
+import {
+  ComponentSignature,
+  isWidlType,
+  ProviderSignature,
+  StructSignature,
+  TypeMap,
+  TypeSignature,
+} from '../../types';
 
 const LANG = LANGUAGE.JSON;
 const TYPE = JSON_TYPE.Interface;
@@ -64,17 +69,6 @@ function isType(def: Definition): def is TypeDefinition {
   return def.isKind(Kind.TypeDefinition);
 }
 
-interface Component {
-  name: string;
-  inputs: Port[];
-  outputs: Port[];
-}
-
-interface Port {
-  name: string;
-  type_string: string;
-}
-
 interface HasName extends AbstractNode {
   name: { value: string };
 }
@@ -83,28 +77,76 @@ function findByName<T extends HasName>(defs: T[], name: string): T | undefined {
   return defs.find(def => def.name.value === name);
 }
 
-function distillType(types: TypeDefinition[], node: TypeDefinition | MapType | ListType | Named): any {
-  if (node.isKind(Kind.Named)) {
-    const name = (<Named>node).name.value;
-    const reference = findByName(types, name);
-    if (!reference) return codegen(node as Named);
-    switch (reference.kind) {
-      case Kind.TypeDefinition:
-        return Object.fromEntries(
-          (<TypeDefinition>reference).fields.map(field => [
-            field.name.value,
-            distillType(types, field.type as Named | MapType | ListType),
-          ]),
-        );
-      default:
-        return codegen(reference);
-    }
-  } else {
-    return codegen(node);
+function reduceTypeDefinition(def: TypeDefinition): StructSignature {
+  const fields: Record<string, TypeSignature> = {};
+  for (const field of def.fields) {
+    fields[field.name.value] = reduceType(field.type, field.annotations);
   }
+
+  return {
+    name: def.name.value,
+    fields,
+  };
 }
 
-function interpret(doc: Document): Component {
+function getAnnotation(name: string, annotations: Annotation[]): Annotation | undefined {
+  const result = annotations.filter(a => a.name.value == name)[0];
+  return result;
+}
+
+function reduceType(type: Type, annotations: Annotation[] = []): TypeSignature {
+  switch (type.getKind()) {
+    case Kind.Named: {
+      const t = type as Named;
+      const name = t.name;
+      if (isWidlType(name.value)) {
+        return { type: name.value };
+      } else {
+        const link = getAnnotation('provider', annotations);
+        if (name.value === 'link') {
+          if (link) {
+            const provider = link.arguments[0];
+            return {
+              type: 'link',
+              provider: provider.value.getValue(),
+            };
+          } else {
+            return {
+              type: 'link',
+            };
+          }
+        } else {
+          return { type: 'ref', ref: `#/types/${name.value}` };
+        }
+      }
+    }
+    case Kind.MapType: {
+      const t = type as MapType;
+      return {
+        type: 'map',
+        key: reduceType(t.keyType, annotations),
+        value: reduceType(t.valueType, annotations),
+      };
+    }
+    case Kind.ListType: {
+      const t = type as ListType;
+      return {
+        type: 'list',
+        element: reduceType(t.type, annotations),
+      };
+    }
+    case Kind.Optional: {
+      const t = type as Optional;
+      return {
+        type: 'optional',
+        option: reduceType(t.type, annotations),
+      };
+    }
+  }
+  throw new Error(`Unhandled type: ${type.getKind()}`);
+}
+
+function interpret(doc: Document): [ComponentSignature, Record<string, StructSignature>] {
   const types = doc.definitions.filter(isType);
   const input_def = findByName(types, 'Inputs');
   const output_def = findByName(types, 'Outputs');
@@ -113,17 +155,30 @@ function interpret(doc: Document): Component {
   if (!input_def) throw new Error('Component schemas must include a type definition named "Inputs"');
   if (!output_def) throw new Error('Component schemas must include a type definition named "Outputs"');
 
-  return {
+  const inputs: TypeMap = Object.fromEntries(
+    input_def.fields.map(field => {
+      return [field.name.value, reduceType(field.type, field.annotations)];
+    }),
+  );
+
+  const outputs = Object.fromEntries(
+    output_def.fields.map(field => {
+      return [field.name.value, reduceType(field.type, field.annotations)];
+    }),
+  );
+
+  const component: ComponentSignature = {
     name: (namespace as NamespaceDefinition).name.value,
-    inputs: input_def.fields.map(field => ({
-      name: field.name.value,
-      type_string: distillType(types, field.type as Named),
-    })),
-    outputs: output_def.fields.map(field => ({
-      name: field.name.value,
-      type_string: distillType(types, field.type as Named),
-    })),
+    inputs,
+    outputs,
   };
+
+  const typeSignatures = Object.fromEntries(
+    types
+      .filter(t => t.name.value !== 'Inputs' && t.name.value !== 'Outputs')
+      .map(t => [t.name.value, reduceTypeDefinition(t)]),
+  );
+  return [component, typeSignatures];
 }
 
 export function handler(args: Arguments): void {
@@ -135,14 +190,28 @@ export function handler(args: Arguments): void {
 
   const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
 
-  const components = files.map(file => {
+  const components: Record<string, ComponentSignature> = {};
+  let types: Record<string, StructSignature> = {};
+
+  const resolver = (location: string) => {
+    const pathParts = location.split('/');
+    const importPath = path.join(args.schema_dir, ...pathParts);
+    const src = readFile(importPath);
+    return src;
+  };
+
+  for (const file of files) {
     const widlSrc = readFile(path.join(args.schema_dir, file));
-    const tree = parse(widlSrc);
-    const component = interpret(tree);
-    return component;
-  });
-  const providerSignature = {
+    const tree = parse(widlSrc, resolver);
+    const [component, additionalTypes] = interpret(tree);
+    types = Object.assign(types, additionalTypes);
+
+    components[component.name] = component;
+  }
+
+  const providerSignature: ProviderSignature = {
     name: args.name,
+    types,
     components,
   };
 
