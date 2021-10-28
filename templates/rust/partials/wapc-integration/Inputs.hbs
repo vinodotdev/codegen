@@ -1,4 +1,5 @@
 
+
 fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs> {
   Ok(Inputs {
     {{#each fields }}
@@ -7,10 +8,28 @@ fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs> {
   })
 }
 
-#[derive(Debug, Deserialize, Serialize, Default, Clone)]
-pub(crate) struct Inputs {
+impl From<Inputs> for TransportMap {
+  fn from(inputs: Inputs) -> TransportMap {
+    let mut map = TransportMap::new();
+    {{#each fields }}
+    {{#switch type.name.value}}
+      {{#case "raw"}}
+        map.insert("{{snakeCase name.value}}".to_owned(), inputs.{{snakeCase name.value}}.into());
+      {{/case}}
+      {{#default}}
+        map.insert("{{snakeCase name.value}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase name.value}}));
+      {{/default}}
+    {{/switch}}
+    {{/each}}
+    map
+  }
+}
+
+#[derive(Debug,Deserialize, Serialize, Clone)]
+pub struct Inputs {
 {{#each fields }}
   #[serde(rename = "{{name.value}}")]
   pub {{snakeCase name.value}}: {{> expand-type type}},
 {{/each}}
 }
+

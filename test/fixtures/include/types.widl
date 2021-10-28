@@ -1,0 +1,10 @@
+type HttpResponse {
+  body:string
+  headers: {string: string}
+}
+
+type HttpRequest {
+  url: string
+  method: string
+  link: link @provider("http")
+}

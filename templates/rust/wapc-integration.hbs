@@ -4,7 +4,7 @@
 
 use vino_provider::wasm::prelude::*;
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = std::result::Result<T, WasmError>;
 
 #[no_mangle]
 pub(crate) extern "C" fn __guest_call(op_len: i32, req_len: i32) -> i32 {
@@ -55,25 +55,25 @@ impl Dispatch for Dispatcher {
       {{#each schemas}}
         "{{document.namespace.name.value}}" => {{snakeCase file.unhyphenated}}::Component::new().execute(&payload),
       {{/each}}
-      _ => Err(Error::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
+      _ => Err(WasmError::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
     }?;
     Ok(serialize(&result)?)
   }
 }
 
 {{#each schemas}}
-pub (crate) mod {{snakeCase file.unhyphenated}} {
+pub mod {{snakeCase file.unhyphenated}} {
   use crate::components::{{snakeCase file.unhyphenated}} as implementation;
 
   use serde::{
     Deserialize,
     Serialize,
   };
-  pub use vino_provider::wasm::{JobResult, console_log, PortSender};
+  pub use vino_provider::wasm::prelude::*;
 
   use super::*;
 
-  pub(crate) struct Component {}
+  pub struct Component {}
 
   impl Component {
     pub fn new() -> Self {
@@ -82,8 +82,8 @@ pub (crate) mod {{snakeCase file.unhyphenated}} {
   }
   impl WapcComponent for Component {
     fn execute(&self, payload: &IncomingPayload) -> JobResult {
+      let outputs = get_outputs(payload.id());
       let inputs = populate_inputs(payload)?;
-      let outputs = get_outputs();
       implementation::job(inputs, outputs)
     }
   }

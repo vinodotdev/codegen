@@ -1,0 +1,45 @@
+{{#switch kind ~}}
+  {{#case "Named"}}
+    {{#switch name.value}}
+      {{#case "i8"}}TypeSignature::I8{{/case}}
+      {{#case "u8"}}TypeSignature::U8{{/case}}
+      {{#case "i16"}}TypeSignature::I16{{/case}}
+      {{#case "u16"}}TypeSignature::U16{{/case}}
+      {{#case "i32"}}TypeSignature::I32{{/case}}
+      {{#case "u32"}}TypeSignature::U32{{/case}}
+      {{#case "i64"}}TypeSignature::I64{{/case}}
+      {{#case "u64"}}TypeSignature::U64{{/case}}
+      {{#case "f32"}}TypeSignature::F32{{/case}}
+      {{#case "f64"}}TypeSignature::F64{{/case}}
+      {{#case "bool"}}TypeSignature::Bool{{/case}}
+      {{#case "string"}}TypeSignature::String{{/case}}
+      {{#case "datetime"}}TypeSignature::Datetime{{/case}}
+      {{#case "bytes"}}TypeSignature::Bytes{{/case}}
+      {{#case "raw"}}TypeSignature::Raw{{/case}}
+      {{#case "value"}}TypeSignature::Value{{/case}}
+
+      {{#case "link"}}Link{provider:None}{{/case}}
+
+      {{#default}}{{name.value}}{{/default}}
+    {{/switch}}
+  {{/case}}
+  {{#case "MapType"}}
+    TypeSignature::Map{
+      key:{{> type-signature keyType}}.into(),
+      value:{{> type-signature valueType }}.into()
+    }
+  {{/case}}
+  {{#case "ListType"}}
+    TypeSignature::List{
+      element:{{> type-signature type}}.into(),
+    }
+  {{/case}}
+  {{#case "Optional"}}
+    TypeSignature::Optional{
+      option:{{> type-signature type}}.into(),
+    }
+  {{/case}}
+  {{#default}}
+  unknown
+  {{/default}}
+{{~/switch}}

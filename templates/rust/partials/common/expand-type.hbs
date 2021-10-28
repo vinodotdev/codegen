@@ -4,6 +4,8 @@
     {{#switch name.value}}
       {{#case "string"}}String{{/case}}
       {{#case "bytes"}}Vec<u8>{{/case}}
+      {{#case "raw"}}RawPacket{{/case}}
+      {{#case "link"}}ProviderLink{{/case}}
       {{#default}}{{name.value}}{{/default}}
     {{/switch}}
   {{/case}}

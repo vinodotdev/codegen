@@ -4,12 +4,23 @@
 
 pub(crate) use vino_provider::native::prelude::*;
 
-pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
-  vec![
+pub(crate) fn get_signature() -> ProviderSignature {
+  use std::collections::HashMap;
+  let mut components = HashMap::new();
   {{#each interface.components}}
-  {{snakeCase @root.interface.name}}::{{snakeCase name}}::signature(),
+    components.insert("{{name}}".to_owned(), {{snakeCase @root.interface.name}}::{{snakeCase name}}::signature());
   {{/each}}
-  ]
+  {{#each schemas}}
+    components.insert("{{document.namespace.name.value}}".to_owned(), generated::{{snakeCase file.unhyphenated}}::signature());
+  {{/each}}
+
+
+  ProviderSignature {
+    name: "".to_owned(),
+    types: StructMap::todo(),
+    components: components.into()
+  }
+
 }
 
 #[derive(Debug)]

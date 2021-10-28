@@ -17,7 +17,7 @@ impl NativeComponent for Component {
     context: Self::Context,
     data: TransportMap,
   ) -> Result<TransportStream, Box<NativeComponentError>> {
-    let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(format!("Input deserialization error: {}", e.to_string())))?;
+    let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
     let (outputs, stream) = get_outputs();
     let result = crate::components::{{snakeCase name}}::job(inputs, outputs, context).await;
     match result {

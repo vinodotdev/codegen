@@ -30,12 +30,19 @@ impl Dispatch for Dispatcher {
   }
 }
 
-pub(crate) fn get_all_components() -> Vec<ComponentSignature> {
-  vec![
+pub(crate) fn get_signature() -> ProviderSignature {
+  use std::collections::HashMap;
+  let mut components = HashMap::new();
+
   {{#each schemas}}
-    generated::{{snakeCase file.unhyphenated}}::signature(),
+    components.insert("{{document.namespace.name.value}}".to_owned(), generated::{{snakeCase file.unhyphenated}}::signature());
   {{/each}}
-  ]
+
+  ProviderSignature {
+    name: "".to_owned(),
+    types: StructMap::todo(),
+    components: components.into()
+  }
 }
 
 {{#each schemas}}
@@ -49,13 +56,17 @@ pub (crate) mod {{snakeCase file.unhyphenated}} {
     Serialize,
   };
 
-  pub(crate) use vino_provider::native::prelude::*;
+  #[cfg(feature = "native")]
+  pub use vino_provider::native::prelude::*;
+
+  #[cfg(feature = "wasm")]
+  pub use vino_provider::wasm::prelude::*;
 
   pub(crate) fn signature() -> ComponentSignature {
     ComponentSignature {
       name: "{{document.namespace.name.value }}".to_owned(),
-      inputs : PortSignature::from_list(inputs_list()),
-      outputs : PortSignature::from_list(outputs_list()),
+      inputs : inputs_list().into(),
+      outputs : outputs_list().into(),
     }
   }
 
@@ -71,13 +82,13 @@ pub (crate) mod {{snakeCase file.unhyphenated}} {
       context: Self::Context,
       data: TransportMap,
     ) -> Result<TransportStream, Box<NativeComponentError>> {
-      let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(format!("Input deserialization error: {}", e.to_string())))?;
+      let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
       let (outputs, stream) = get_outputs();
       let result = tokio::spawn(crate::components::{{snakeCase namespace.name.value}}::job(inputs, outputs, context))
         .await
         .map_err(|e| {
           Box::new(NativeComponentError::new(format!(
-            "Component panicked: {}",
+            "Component error: {}",
             e
           )))
         })?;

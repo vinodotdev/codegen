@@ -10,3 +10,4 @@ type Inputs {
 type Outputs {
   greeting: string
 }
+
