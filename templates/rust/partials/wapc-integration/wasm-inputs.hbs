@@ -1,0 +1,35 @@
+
+
+fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs> {
+  Ok(Inputs {
+    {{#each . }}
+    {{snakeCase @key}}: deserialize(payload.get("{{@key}}")?)?,
+    {{/each}}
+  })
+}
+
+impl From<Inputs> for TransportMap {
+  fn from(inputs: Inputs) -> TransportMap {
+    let mut map = TransportMap::new();
+    {{#each . }}
+    {{#switch type}}
+      {{#case "raw"}}
+        map.insert("{{snakeCase @key}}".to_owned(), inputs.{{snakeCase @key}}.into());
+      {{/case}}
+      {{#default}}
+        map.insert("{{snakeCase @key}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase @key}}));
+      {{/default}}
+    {{/switch}}
+    {{/each}}
+    map
+  }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct Inputs {
+{{#each . }}
+  #[serde(rename = "{{@key}}")]
+  pub {{snakeCase @key}}: {{> expand-type .}},
+{{/each}}
+}
+
