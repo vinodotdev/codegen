@@ -1,0 +1,16 @@
+ProviderSignature {
+  name: {{#if name}}Some("{{name}}".to_owned()){{else}}None{{/if}},
+  types: std::collections::HashMap::from([
+  {{#each .}}
+    ("{{@key}}".to_owned(), StructSignature{
+      name:"{{name}}".to_owned(),
+      fields: std::collections::HashMap::from([
+      {{#each fields}}
+        ("{{@key}}".to_owned(),{{> type-signature type}}),
+      {{/each}}
+      ]).into()
+    }),
+  {{/each}}
+  ]).into(),
+  components: components.into()
+}

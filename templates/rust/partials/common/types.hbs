@@ -1,0 +1,12 @@
+{{#ifEmpty types}}
+pub mod types {
+  // no additional types
+}
+{{else}}
+pub mod types {
+  use vino_provider::prelude::*;
+  {{#each types}}
+  {{> struct-definition . }}
+  {{/each}}
+}
+{{/ifEmpty}}

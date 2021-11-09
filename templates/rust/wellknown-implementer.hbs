@@ -2,7 +2,9 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-pub(crate) use vino_provider::native::prelude::*;
+pub(crate) use vino_provider::prelude::*;
+
+{{> component-imports .}}
 
 pub(crate) fn get_signature() -> ProviderSignature {
   use std::collections::HashMap;
@@ -10,16 +12,8 @@ pub(crate) fn get_signature() -> ProviderSignature {
   {{#each interface.components}}
     components.insert("{{name}}".to_owned(), {{snakeCase @root.interface.name}}::{{snakeCase name}}::signature());
   {{/each}}
-  {{#each schemas}}
-    components.insert("{{document.namespace.name.value}}".to_owned(), generated::{{snakeCase file.unhyphenated}}::signature());
-  {{/each}}
 
-
-  ProviderSignature {
-    name: "".to_owned(),
-    types: StructMap::todo(),
-    components: components.into()
-  }
+  {{> provider-signature interface}}
 
 }
 
@@ -35,7 +29,7 @@ impl Dispatch for Dispatcher {
   ) -> Result<TransportStream, Box<NativeComponentError>>{
     let result = match op {
       {{#each interface.components}}
-        "{{ name }}" => self::{{snakeCase name}}::Component::default().execute(context, data).await,
+        "{{ name }}" => self::generated::{{snakeCase name}}::Component::default().execute(context, data).await,
       {{/each}}
       _ => Err(Box::new(NativeComponentError::new(format!(
         "Component not found on this provider: {}",
@@ -46,12 +40,13 @@ impl Dispatch for Dispatcher {
   }
 }
 
-{{#each interface.components}}
-pub (crate) mod {{snakeCase name}} {
-  #![allow(unused)]
-  use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
+pub mod generated {
+  {{#each interface.components}}
+  pub (crate) mod {{snakeCase name}} {
+    #![allow(unused)]
+    use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
 
-
-  {{> component . }}
+    {{> component . }}
+  }
+  {{/each}}
 }
-{{/each}}

@@ -2,8 +2,8 @@
 #[derive(Debug, Default)]
 #[cfg(feature = "provider")]
 pub struct OutputPorts {
-  {{#each fields}}
-    pub {{snakeCase name.value}}: {{pascalCase name.value}}PortSender,
+  {{#each .}}
+    pub {{snakeCase @key}}: {{pascalCase @key}}PortSender,
   {{/each}}
 }
 
@@ -11,30 +11,30 @@ pub struct OutputPorts {
 #[cfg(any(feature = "native", feature = "wasm"))]
 pub fn outputs_list() -> HashMap<String, TypeSignature> {
   let mut map = HashMap::new();
-  {{#each fields}}
-    map.insert("{{name.value}}".to_owned(),{{> type-signature type}});
+  {{#each .}}
+    map.insert("{{@key}}".to_owned(),{{> type-signature .}});
   {{/each}}
   map
 }
 
-{{#each fields}}
+{{#each .}}
 #[derive(Debug)]
 #[cfg(feature = "provider")]
-pub struct {{pascalCase name.value}}PortSender {
+pub struct {{pascalCase @key}}PortSender {
     port: PortChannel,
 }
 
 #[cfg(feature = "provider")]
-impl Default for {{pascalCase name.value}}PortSender {
+impl Default for {{pascalCase @key}}PortSender {
     fn default() -> Self {
         Self {
-            port: PortChannel::new("{{name.value}}"),
+            port: PortChannel::new("{{@key}}"),
         }
     }
 }
 
 #[cfg(feature = "provider")]
-impl PortSender for {{pascalCase name.value}}PortSender {
+impl PortSender for {{pascalCase @key}}PortSender {
     fn get_port(&self) -> Result<&PortChannel, ProviderError> {
       if self.port.is_closed() {
         Err(ProviderError::SendChannelClosed)
@@ -54,8 +54,8 @@ impl PortSender for {{pascalCase name.value}}PortSender {
 pub fn get_outputs() -> (OutputPorts, TransportStream) {
     let mut outputs = OutputPorts::default();
     let mut ports = vec![
-    {{#each fields}}
-    &mut outputs.{{snakeCase name.value}}.port,
+    {{#each .}}
+    &mut outputs.{{snakeCase @key}}.port,
     {{/each}}
     ];
     let stream = PortChannel::merge_all(&mut ports);
@@ -71,10 +71,10 @@ pub struct Outputs {
 
 #[cfg(all(feature = "native", feature = "guest"))]
 impl Outputs {
-  {{#each fields}}
-    pub async fn {{snakeCase name.value}}(&mut self)-> Result<PortOutput<{{> expand-type type }}>, ProviderError> {
-      let packets = self.packets.take("{{name.value}}").await;
-      Ok(PortOutput::new("{{name.value}}".to_owned(), packets))
+  {{#each .}}
+    pub async fn {{snakeCase @key}}(&mut self)-> Result<PortOutput<{{> expand-type . }}>, ProviderError> {
+      let packets = self.packets.take("{{@key}}").await;
+      Ok(PortOutput::new("{{@key}}".to_owned(), packets))
     }
   {{/each}}
 }
@@ -82,9 +82,9 @@ impl Outputs {
 #[cfg(all(feature = "wasm", feature = "guest"))]
 impl Outputs {
   {{#each fields}}
-    pub fn {{snakeCase name.value}}(&mut self)-> Result<PortOutput, WasmError> {
-      let packets = self.packets.take("{{name.value}}").ok_or_else(|| WasmError::ResponseMissing("{{name.value}}".to_owned()))?;
-      Ok(PortOutput::new("{{name.value}}".to_owned(), packets))
+    pub fn {{snakeCase @key}}(&mut self)-> Result<PortOutput, WasmError> {
+      let packets = self.packets.take("{{@key}}").ok_or_else(|| WasmError::ResponseMissing("{{@key}}".to_owned()))?;
+      Ok(PortOutput::new("{{@key}}".to_owned(), packets))
     }
   {{/each}}
 }

@@ -15,13 +15,10 @@ export enum LANGUAGE {
 
 export enum CODEGEN_TYPE {
   ProviderComponent = 'provider-component',
-  ProviderComponentModule = 'provider-component-module',
   ProviderIntegration = 'provider-integration',
-  WellKnownIntegration = 'wellknown-integration',
-  WellKnownComponentModule = 'wellknown-component-module',
+  WellKnownImplementer = 'wellknown-implementer',
   Interface = 'interface',
   WapcComponent = 'wapc-component',
-  WapcComponentModule = 'wapc-component-module',
   WapcIntegration = 'wapc-integration',
   WapcLib = 'wapc-lib',
 }
@@ -103,6 +100,42 @@ export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WI
       const partialSource = readFile(partialPath);
       handlebars.registerPartial(name, partialSource);
     }
+  }
+}
+
+export interface HelperMap {
+  [name: string]: Handlebars.HelperDelegate;
+}
+
+export function registerLanguageHelpers(lang: LANGUAGE): void {
+  handlebars.registerHelper('ifEmpty', function (this: any, context: unknown, options): string {
+    let isEmpty = false;
+    if (context === undefined || context === null) {
+      isEmpty = true;
+    } else if (typeof context === 'string' && context.length === 0) {
+      isEmpty = true;
+    } else if (Array.isArray(context) && context.length === 0) {
+      isEmpty = true;
+    } else if (context && typeof context === 'object' && Object.keys(context).length === 0) {
+      isEmpty = true;
+    } else {
+      isEmpty = false;
+    }
+    return isEmpty ? options.fn(this) : options.inverse(this);
+  });
+  switch (lang) {
+    case LANGUAGE.Rust:
+      {
+        handlebars.registerHelper('refToModulePath', function (context: string): string {
+          if (context) {
+            return context.substr(1).split('/').slice(1).join('::');
+          } else {
+            throw new Error(`Called refToModulePath with invalid context: ${context}`);
+          }
+        });
+      }
+      break;
+    default:
   }
 }
 

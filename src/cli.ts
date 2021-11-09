@@ -15,7 +15,7 @@ try {
   debug('Done processing command');
 } catch (e) {
   debug('Error %o', e);
-  console.error(`Error running task : ${e.message}`);
+  console.error(`Error running task : ${e}`);
   process.exit(1);
 }
 debug('Done with main');

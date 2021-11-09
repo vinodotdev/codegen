@@ -2,9 +2,9 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-use vino_provider::native::prelude::*;
+pub use vino_provider::prelude::*;
 
-use crate::generated;
+{{> component-imports . }}
 
 #[derive(Debug)]
 pub(crate) struct Dispatcher {}
@@ -16,10 +16,9 @@ impl Dispatch for Dispatcher {
     context: Self::Context,
     data: TransportMap,
   ) -> Result<TransportStream, Box<NativeComponentError>>{
-    use generated::*;
     let result = match op {
-      {{#each schemas}}
-        "{{document.namespace.name.value}}" => {{snakeCase file.unhyphenated}}::Component::default().execute(context, data).await,
+      {{#each interface.components}}
+        "{{name}}" => generated::{{snakeCase name}}::Component::default().execute(context, data).await,
       {{/each}}
       _ => Err(Box::new(NativeComponentError::new(format!(
         "Component not found on this provider: {}",
@@ -30,89 +29,67 @@ impl Dispatch for Dispatcher {
   }
 }
 
-pub(crate) fn get_signature() -> ProviderSignature {
-  use std::collections::HashMap;
-  let mut components = HashMap::new();
+pub fn get_signature() -> ProviderSignature {
+  let mut components = std::collections::HashMap::new();
 
-  {{#each schemas}}
-    components.insert("{{document.namespace.name.value}}".to_owned(), generated::{{snakeCase file.unhyphenated}}::signature());
+  {{#each interface.components}}
+    components.insert("{{name}}".to_owned(), generated::{{snakeCase name}}::signature());
   {{/each}}
 
-  ProviderSignature {
-    name: "".to_owned(),
-    types: StructMap::todo(),
-    components: components.into()
-  }
+  {{> provider-signature interface}}
 }
 
-{{#each schemas}}
-pub (crate) mod {{snakeCase file.unhyphenated}} {
-  #![allow(unused,unreachable_pub)]
-  use std::collections::HashMap;
+{{> types interface }}
 
-  use async_trait::async_trait;
-  use serde::{
-    Deserialize,
-    Serialize,
-  };
+pub mod generated {
+{{#each interface.components}}
+  pub mod {{snakeCase name}} {
+    #![allow(unused,unreachable_pub)]
+    use std::collections::HashMap;
 
-  #[cfg(feature = "native")]
-  pub use vino_provider::native::prelude::*;
+    use async_trait::async_trait;
 
-  #[cfg(feature = "wasm")]
-  pub use vino_provider::wasm::prelude::*;
+    pub use vino_provider::prelude::*;
 
-  pub(crate) fn signature() -> ComponentSignature {
-    ComponentSignature {
-      name: "{{document.namespace.name.value }}".to_owned(),
-      inputs : inputs_list().into(),
-      outputs : outputs_list().into(),
-    }
-  }
-
-  {{#with document}}
-  #[derive(Default)]
-  pub(crate) struct Component {}
-
-  #[async_trait]
-  impl NativeComponent for Component {
-    type Context = crate::Context;
-    async fn execute(
-      &self,
-      context: Self::Context,
-      data: TransportMap,
-    ) -> Result<TransportStream, Box<NativeComponentError>> {
-      let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
-      let (outputs, stream) = get_outputs();
-      let result = tokio::spawn(crate::components::{{snakeCase namespace.name.value}}::job(inputs, outputs, context))
-        .await
-        .map_err(|e| {
-          Box::new(NativeComponentError::new(format!(
-            "Component error: {}",
-            e
-          )))
-        })?;
-      match result {
-        Ok(_) => Ok(stream),
-        Err(e) => Err(Box::new(NativeComponentError::new(e.to_string()))),
+    pub fn signature() -> ComponentSignature {
+      ComponentSignature {
+        name: "{{name}}".to_owned(),
+        inputs : inputs_list().into(),
+        outputs : outputs_list().into(),
       }
     }
-  }
 
-  {{#each definitions}}
-  {{#switch kind}}
-    {{#case "NamespaceDefinition"}}{{/case}}
-    {{#case "TypeDefinition"}}
-      {{#switch name.value}}
-          {{> native-type-definition .}}
-      {{/switch}}
-    {{/case}}
-    {{#default}}
-      {{debug .}}
-      {{panic "WIDL Node not yet handled"}}
-    {{/default}}
-  {{/switch}}
-  {{/each}}
-  {{/with}}
-}
+    #[derive(Default)]
+    pub struct Component {}
+
+    #[async_trait]
+    impl NativeComponent for Component {
+      type Context = crate::Context;
+      async fn execute(
+        &self,
+        context: Self::Context,
+        data: TransportMap,
+      ) -> Result<TransportStream, Box<NativeComponentError>> {
+        let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
+        let (outputs, stream) = get_outputs();
+        let result = tokio::spawn(crate::components::{{snakeCase name}}::job(inputs, outputs, context))
+          .await
+          .map_err(|e| {
+            Box::new(NativeComponentError::new(format!(
+              "Component error: {}",
+              e
+            )))
+          })?;
+        match result {
+          Ok(_) => Ok(stream),
+          Err(e) => Err(Box::new(NativeComponentError::new(e.to_string()))),
+        }
+      }
+    }
+
+    {{> native-inputs inputs }}
+    {{> native-outputs outputs }}
+
+  }
 {{/each}}
+}

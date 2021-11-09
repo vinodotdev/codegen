@@ -49,7 +49,7 @@ describe('json command', function () {
         'hello-world': {
           name: 'hello-world',
           inputs: {
-            message: { type: 'string' },
+            messages: { type: 'list', element: { type: 'string' } },
           },
           outputs: {
             greeting: { type: 'string' },

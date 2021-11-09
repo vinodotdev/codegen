@@ -11,10 +11,11 @@ import {
   CommonWidlOptions,
   CommonOutputOptions,
   outputOpts,
+  registerLanguageHelpers,
 } from '../../common';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WellKnownComponentModule;
+const TYPE = CODEGEN_TYPE.WellKnownImplementer;
 
 export const command = `${TYPE} <interface> [options]`;
 export const desc = 'Generate the Vino integration code for well-known interface schemas';
@@ -36,6 +37,7 @@ interface Arguments extends CommonWidlOptions, CommonOutputOptions {
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
+  registerLanguageHelpers(LANG);
 
   const options = {
     root: args.root,

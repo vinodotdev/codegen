@@ -1,24 +1,18 @@
 
-{{#switch kind ~}}
-  {{#case "Named"}}
-    {{#switch name.value}}
-      {{#case "string"}}String{{/case}}
-      {{#case "bytes"}}Vec<u8>{{/case}}
-      {{#case "raw"}}RawPacket{{/case}}
-      {{#case "link"}}ProviderLink{{/case}}
-      {{#default}}{{name.value}}{{/default}}
-    {{/switch}}
+{{#switch type ~}}
+  {{#case "ref"}}super::{{refToModulePath ref}}{{/case}}
+  {{#case "string"}}String{{/case}}
+  {{#case "bytes"}}Vec<u8>{{/case}}
+  {{#case "raw"}}RawPacket{{/case}}
+  {{#case "link"}}ProviderLink{{/case}}
+  {{#case "map"}}
+    std::collections::HashMap<{{> expand-type key}}, {{> expand-type value}}>
   {{/case}}
-  {{#case "MapType"}}
-    std::collections::HashMap<{{> expand-type keyType}}, {{> expand-type valueType}}>
+  {{#case "list"}}
+    Vec<{{> expand-type element}}>
   {{/case}}
-  {{#case "ListType"}}
-    Vec<{{> expand-type type}}>
-  {{/case}}
-  {{#case "Optional"}}
+  {{#case "optional"}}
     Option<{{>expand-type type}}>
   {{/case}}
-  {{#default}}
-  unknown
-  {{/default}}
+  {{#default}}{{type}}{{/default}}
 {{~/switch}}

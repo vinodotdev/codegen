@@ -1,0 +1,83 @@
+{
+  "name": "rust-project",
+  "types": {
+    "HttpRequest": {
+      "name": "HttpRequest",
+      "fields": {
+        "url": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "link": {
+          "type": "link",
+          "provider": "http"
+        }
+      }
+    },
+    "HttpResponse": {
+      "name": "HttpResponse",
+      "fields": {
+        "body": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "map",
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "add": {
+      "name": "add",
+      "inputs": {
+        "left": {
+          "type": "i64"
+        },
+        "right": {
+          "type": "i64"
+        }
+      },
+      "outputs": {
+        "sum": {
+          "type": "i64"
+        }
+      }
+    },
+    "hello-world": {
+      "name": "hello-world",
+      "inputs": {
+        "message": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "greeting": {
+          "type": "string"
+        }
+      }
+    },
+    "http-request": {
+      "name": "http-request",
+      "inputs": {
+        "request": {
+          "type": "ref",
+          "ref": "#/types/HttpRequest"
+        }
+      },
+      "outputs": {
+        "response": {
+          "type": "ref",
+          "ref": "#/types/HttpResponse"
+        }
+      }
+    }
+  }
+}
