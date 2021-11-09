@@ -1,0 +1,12 @@
+namespace "http-request"
+
+import {HttpRequest,HttpResponse} from "./include/types.widl"
+
+type Inputs {
+  request: HttpRequest
+}
+
+type Outputs {
+  response: HttpResponse
+}
+

@@ -15,6 +15,7 @@ import {
 } from '../../common';
 import path from 'path';
 import fs from 'fs';
+import { processDir } from '../../process-widl-dir';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.Interface;
@@ -54,7 +55,7 @@ export function handler(args: Arguments): void {
   });
 
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const generated = template({ schemas });
-
+  const iface = processDir('', args.schema_dir);
+  const generated = template({ schemas, interface: iface });
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

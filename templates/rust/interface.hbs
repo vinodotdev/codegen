@@ -2,45 +2,33 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-{{#each schemas}}
-  pub mod {{snakeCase file.unhyphenated}} {
-  use serde::{
-    Deserialize,
-    Serialize,
-  };
+{{#each types}}
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, Clone)]
+pub struct {{pascalCase name}} {
+  {{#each fields }}
+  #[serde(rename = "{{name}}")]
+  pub {{snakeCase @key}}: {{> expand-type . }},
+  {{/each}}
+}
+{{/each}}
+
+{{#each interface.components}}
+  pub mod {{snakeCase name}} {
+
   use std::collections::HashMap;
 
-  #[cfg(feature = "native")]
-  pub use vino_provider::native::prelude::*;
-  #[cfg(feature = "wasm")]
-  pub use vino_provider::wasm::prelude::*;
-
-  {{#with document}}
+  pub use vino_provider::prelude::*;
 
   #[cfg(any(feature = "native", feature = "wasm"))]
   pub fn signature() -> ComponentSignature {
     ComponentSignature {
-      name: "{{namespace.name.value}}".to_owned(),
+      name: "{{name}}".to_owned(),
       inputs : inputs_list().into(),
       outputs : outputs_list().into(),
     }
   }
 
-  {{#each definitions}}
-  {{#switch kind}}
-    {{#case "NamespaceDefinition"}}{{/case}}
-    {{#case "TypeDefinition"}}
-      {{#switch name.value}}
-          {{> native-type-definition .}}
-      {{/switch}}
-    {{/case}}
-    {{#default}}
-      {{debug .}}
-      {{panic "WIDL Node not yet handled"}}
-    {{/default}}
-  {{/switch}}
-  {{/each}}
-  {{/with}}
-
+  {{> native-inputs inputs }}
+  {{> native-outputs outputs }}
 }
 {{/each}}

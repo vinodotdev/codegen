@@ -1,20 +1,19 @@
 import yargs from 'yargs';
-import { handlebars, parseWidl, registerHelpers } from 'widl-template';
+import { handlebars, registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,
   commitOutput,
   LANGUAGE,
-  readFile,
   registerTypePartials,
   widlOpts,
   CommonWidlOptions,
   CommonOutputOptions,
   outputOpts,
-  normalizeFilename,
+  registerLanguageHelpers,
 } from '../../common';
-import path from 'path';
-import fs from 'fs';
+
+import { processDir } from '../../process-widl-dir';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.ProviderIntegration;
@@ -39,22 +38,15 @@ interface Arguments extends CommonWidlOptions, CommonOutputOptions {
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
+  registerLanguageHelpers(LANG);
 
   const options = {
     root: args.root,
   };
   registerHelpers(options);
-
-  const files = fs.readdirSync(args.schema_dir).filter(path => path.endsWith('.widl'));
-
-  const schemas = files.map(file => {
-    const widlSrc = readFile(path.join(args.schema_dir, file));
-    const tree = parseWidl(widlSrc);
-    return { file: normalizeFilename(file), document: tree };
-  });
-
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const generated = template({ schemas });
+  const iface = processDir('', args.schema_dir);
+  const generated = template({ interface: iface });
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

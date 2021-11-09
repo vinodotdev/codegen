@@ -2,21 +2,21 @@
 #[cfg(any(feature = "native", feature = "wasm"))]
 pub fn populate_inputs(mut payload: TransportMap) -> Result<Inputs, TransportError> {
   Ok(Inputs {
-    {{#each fields }}
-    {{#ifCond type.name.value "==" "raw"}}
-      {{snakeCase name.value}}: payload.consume_raw("{{name.value}}")?.into(),
+    {{#each . }}
+    {{#ifCond type "==" "raw"}}
+      {{snakeCase @key}}: payload.consume_raw("{{@key}}")?.into(),
     {{else}}
-      {{snakeCase name.value}}: payload.consume("{{name.value}}")?,
+      {{snakeCase @key}}: payload.consume("{{@key}}")?,
     {{/ifCond}}
     {{/each}}
   })
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct Inputs {
-{{#each fields }}
-  #[serde(rename = "{{name.value}}")]
-  pub {{snakeCase name.value}}: {{> expand-type type}},
+{{#each . }}
+  #[serde(rename = "{{@key}}")]
+  pub {{snakeCase @key}}: {{> expand-type .}},
 {{/each}}
 }
 
@@ -24,11 +24,11 @@ pub struct Inputs {
 impl From<Inputs> for TransportMap {
   fn from(inputs: Inputs) -> TransportMap {
     let mut map = TransportMap::new();
-    {{#each fields }}
-    {{#ifCond type.name.value "==" "raw"}}
-      map.insert("{{snakeCase name.value}}".to_owned(), inputs.{{snakeCase name.value}}.into());
+    {{#each . }}
+    {{#ifCond type "==" "raw"}}
+      map.insert("{{snakeCase @key}}".to_owned(), inputs.{{snakeCase @key}}.into());
     {{else}}
-      map.insert("{{snakeCase name.value}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase name.value}}));
+      map.insert("{{snakeCase @key}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase @key}}));
     {{/ifCond}}
 
     {{/each}}
@@ -40,8 +40,8 @@ impl From<Inputs> for TransportMap {
 #[cfg(any(feature = "native", feature = "wasm"))]
 pub fn inputs_list() -> HashMap<String, TypeSignature> {
   let mut map = HashMap::new();
-  {{#each fields}}
-    map.insert("{{name.value}}".to_owned(),{{> type-signature type}});
+  {{#each .}}
+    map.insert("{{@key}}".to_owned(),{{> type-signature .}});
   {{/each}}
   map
 }

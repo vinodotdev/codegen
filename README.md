@@ -19,16 +19,13 @@ vino-codegen rust
 Generate Rust code from a WIDL schema
 
 Commands:
-  vino-codegen rust interface <schema_dir> [options]                  Generate source code for well-known interfaces
-  vino-codegen rust provider-component-module <schema_dir> [options]  Generate root native provider components module
-  vino-codegen rust provider-component <schema> [options]             Generate boilerplate for native provider components
-  vino-codegen rust provider-integration <schema_dir> [options]       Generate the Vino integration code for all component schemas
-  vino-codegen rust wapc-component-module <schema_dir> [options]      Generate root native provider components module
-  vino-codegen rust wapc-component <schema> [options]                 Generate boilerplate for WaPC components
-  vino-codegen rust wapc-integration <schema_dir> [options]           Generate the Vino & WaPC integration code for all component schemas
-  vino-codegen rust wapc-lib                                          Generate the boilerplate lib.rs for WaPC components
-  vino-codegen rust wellknown-component-module <interface> [options]  Generate the Vino integration code for well-known interface schemas
-  vino-codegen rust wellknown-integration <interface> [options]       Generate the Vino integration code for well-known interface schemas
+  vino-codegen rust interface <schema_dir> [options]             Generate source code for well-known interfaces
+  vino-codegen rust provider-component <schema> [options]        Generate boilerplate for native provider components
+  vino-codegen rust provider-integration <schema_dir> [options]  Generate the Vino integration code for all component schemas
+  vino-codegen rust wapc-component <schema> [options]            Generate boilerplate for WaPC components
+  vino-codegen rust wapc-integration <schema_dir> [options]      Generate the Vino & WaPC integration code for all component schemas
+  vino-codegen rust wapc-lib                                     Generate the boilerplate lib.rs for WaPC components
+  vino-codegen rust wellknown-implementer <interface> [options]  Generate the Vino integration code for well-known interface schemas
 
 Options:
       --version  Show version number                                                                                                           [boolean]

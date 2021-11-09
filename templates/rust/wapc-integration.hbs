@@ -2,7 +2,9 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-use vino_provider::wasm::prelude::*;
+pub use vino_provider::prelude::*;
+
+{{> component-imports . }}
 
 type Result<T> = std::result::Result<T, WasmError>;
 
@@ -42,9 +44,7 @@ pub(crate) extern "C" fn __guest_call(op_len: i32, req_len: i32) -> i32 {
 }
 
 static  ALL_COMPONENTS: &[&str] = &[
-{{#each schemas}}
-"{{document.namespace.name.value}}",
-{{/each}}
+{{#each interface.components}}"{{name}}",{{/each}}
 ];
 
 pub struct Dispatcher {}
@@ -52,8 +52,8 @@ impl Dispatch for Dispatcher {
   fn dispatch(op: &str, payload: &[u8]) -> CallResult {
     let payload = IncomingPayload::from_buffer(payload)?;
     let result = match op {
-      {{#each schemas}}
-        "{{document.namespace.name.value}}" => {{snakeCase file.unhyphenated}}::Component::new().execute(&payload),
+      {{#each interface.components}}
+        "{{name}}" => {{snakeCase name}}::Component::default().execute(&payload),
       {{/each}}
       _ => Err(WasmError::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
     }?;
@@ -61,48 +61,32 @@ impl Dispatch for Dispatcher {
   }
 }
 
-{{#each schemas}}
-pub mod {{snakeCase file.unhyphenated}} {
-  use crate::components::{{snakeCase file.unhyphenated}} as implementation;
+{{> types interface }}
 
-  use serde::{
-    Deserialize,
-    Serialize,
-  };
-  pub use vino_provider::wasm::prelude::*;
-
+pub mod generated {
   use super::*;
+{{#each interface.components}}
+  pub mod {{snakeCase name}} {
+    use crate::components::{{snakeCase name}} as implementation;
 
-  pub struct Component {}
+    pub use vino_provider::prelude::*;
 
-  impl Component {
-    pub fn new() -> Self {
-      Self { }
+    use super::*;
+
+    #[derive(Default)]
+    pub struct Component {}
+
+    impl WapcComponent for Component {
+      fn execute(&self, payload: &IncomingPayload) -> JobResult {
+        let outputs = get_outputs(payload.id());
+        let inputs = populate_inputs(payload)?;
+        implementation::job(inputs, outputs)
+      }
     }
-  }
-  impl WapcComponent for Component {
-    fn execute(&self, payload: &IncomingPayload) -> JobResult {
-      let outputs = get_outputs(payload.id());
-      let inputs = populate_inputs(payload)?;
-      implementation::job(inputs, outputs)
-    }
-  }
 
-{{#with document}}
-{{#each definitions}}
-{{#switch kind}}
-  {{#case "NamespaceDefinition"}}{{/case}}
-  {{#case "TypeDefinition"}}
-    {{#switch name.value}}
-        {{> TypeDefinition .}}
-    {{/switch}}
-  {{/case}}
-  {{#default}}
-    {{debug .}}
-    {{panic "WIDL Node not yet handled"}}
-  {{/default}}
-{{/switch}}
+      {{> wasm-inputs inputs }}
+      {{> wasm-outputs outputs }}
+
+  }
 {{/each}}
-{{/with}}
 }
-{{/each}}

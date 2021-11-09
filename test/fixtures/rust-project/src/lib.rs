@@ -1,2 +1,1 @@
-mod generated;
 pub mod components;

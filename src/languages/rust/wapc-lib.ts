@@ -9,6 +9,7 @@ import {
   CommonOutputOptions,
   outputOpts,
   CommonWidlOptions,
+  registerLanguageHelpers,
 } from '../../common';
 
 const LANG = LANGUAGE.Rust;
@@ -25,6 +26,7 @@ interface Arguments extends CommonWidlOptions, CommonOutputOptions {}
 
 export function handler(args: Arguments): void {
   registerTypePartials(LANG, TYPE);
+  registerLanguageHelpers(LANG);
 
   const options = {
     root: args.root,

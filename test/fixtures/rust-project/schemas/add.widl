@@ -1,13 +1,13 @@
 
-namespace "hello-world"
+namespace "add"
 
 "Example inputs"
 type Inputs {
-  messages: [string]
+  left: i64,
+  right: i64
 }
 
 "Example outputs"
 type Outputs {
-  greeting: string
+  sum: i64
 }
-

@@ -3,7 +3,7 @@ namespace "hello-world"
 
 "Example inputs"
 type Inputs {
-  messages: [string]
+  message: string
 }
 
 "Example outputs"
