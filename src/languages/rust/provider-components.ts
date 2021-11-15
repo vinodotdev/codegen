@@ -8,20 +8,21 @@ import {
   registerTypePartials,
   CommonOutputOptions,
   outputOpts,
-  normalizeFilename,
   registerLanguageHelpers,
+  readInterface,
 } from '../../common';
+import path from 'path';
 
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WapcComponent;
+const TYPE = CODEGEN_TYPE.ProviderComponents;
 
-export const command = `${TYPE} <schema> [options]`;
+export const command = `${TYPE} <interface> [options]`;
 
-export const desc = 'Generate boilerplate for WaPC components';
+export const desc = 'Generate boilerplate for native provider components';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
-    .positional('schema', {
+    .positional('interface', {
       demandOption: true,
       type: 'string',
       description: "The path to the component's WIDL schema",
@@ -31,7 +32,7 @@ export const builder = (yargs: yargs.Argv): yargs.Argv => {
 };
 
 interface Arguments extends CommonOutputOptions {
-  schema: string;
+  interface: string;
 }
 
 export function handler(args: Arguments): void {
@@ -41,6 +42,10 @@ export function handler(args: Arguments): void {
   registerHelpers();
 
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const generated = template({ schema: normalizeFilename(args.schema) });
-  commitOutput(generated, args.output, { force: args.force, silent: args.silent });
+  const iface = readInterface(args.interface);
+  for (const component in iface.components) {
+    const generated = template({ name: component, signature: iface.components[component] });
+    const fileName = component.replace(/-/g, '_');
+    commitOutput(generated, path.join(args.output || '.', `${fileName}.rs`), { force: false, silent: true });
+  }
 }

@@ -11,29 +11,31 @@ import {
   CommonOutputOptions,
   outputOpts,
   registerLanguageHelpers,
+  readInterface,
 } from '../../common';
 
 import { processDir } from '../../process-widl-dir';
+import { debug } from '../../common';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.ProviderIntegration;
 
-export const command = `${TYPE} <schema_dir> [options]`;
+export const command = `${TYPE} <interface> [options]`;
 export const desc = 'Generate the Vino integration code for all component schemas';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
-    .positional('schema_dir', {
+    .positional('interface', {
       demandOption: true,
       type: 'string',
       description: 'Path to WIDL schema directory',
     })
     .options(outputOpts(widlOpts({})))
-    .example(`rust ${TYPE} schemas/`, 'Prints generated code to STDOUT');
+    .example(`rust ${TYPE} interface.json`, 'Prints generated code to STDOUT');
 };
 
 interface Arguments extends CommonWidlOptions, CommonOutputOptions {
-  schema_dir: string;
+  interface: string;
 }
 
 export function handler(args: Arguments): void {
@@ -44,8 +46,10 @@ export function handler(args: Arguments): void {
     root: args.root,
   };
   registerHelpers(options);
+
   const template = handlebars.compile(getTemplate(LANG, TYPE));
-  const iface = processDir('', args.schema_dir);
+  const iface = readInterface(args.interface);
+
   const generated = template({ interface: iface });
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
