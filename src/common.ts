@@ -277,7 +277,6 @@ export function commitOutput(src: string, filePath?: string, options: CommitOpti
 }
 
 export function readInterface(interfacePath: string): ProviderSignature {
-  debug('Reading interface JSON at %o', interfacePath);
   const ifaceJson = fs.readFileSync(interfacePath, 'utf-8');
   const iface = JSON.parse(ifaceJson) as ProviderSignature;
   return iface;
