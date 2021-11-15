@@ -5,6 +5,7 @@ import DEBUG from 'debug';
 import { handlebars } from 'widl-template';
 import { AbstractNode, Kind, ListType, MapType, Named, Optional } from '@wapc/widl/ast';
 import yargs from 'yargs';
+import { ProviderSignature } from './types';
 export const debug = DEBUG('vino-codegen');
 
 export enum LANGUAGE {
@@ -14,11 +15,11 @@ export enum LANGUAGE {
 }
 
 export enum CODEGEN_TYPE {
-  ProviderComponent = 'provider-component',
+  ProviderComponents = 'provider-components',
   ProviderIntegration = 'provider-integration',
   WellKnownImplementer = 'wellknown-implementer',
   Interface = 'interface',
-  WapcComponent = 'wapc-component',
+  WapcComponents = 'wapc-components',
   WapcIntegration = 'wapc-integration',
   WapcLib = 'wapc-lib',
 }
@@ -203,7 +204,7 @@ export function outputOpts(obj: { [key: string]: yargs.Options }): typeof obj {
     },
     o: {
       alias: 'output',
-      describe: 'The output destination (defaults to STDOUT)',
+      describe: 'The output destination (defaults to STDOUT for text)',
       default: undefined,
       type: 'string',
     },
@@ -253,4 +254,10 @@ export function commitOutput(src: string, path?: string, options: CommitOptions 
   } else {
     console.log(src);
   }
+}
+
+export function readInterface(interfacePath: string): ProviderSignature {
+  const ifaceJson = fs.readFileSync(interfacePath, 'utf-8');
+  const iface = JSON.parse(ifaceJson) as ProviderSignature;
+  return iface;
 }
