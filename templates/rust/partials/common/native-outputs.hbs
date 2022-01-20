@@ -9,8 +9,8 @@ pub struct OutputPorts {
 
 #[must_use]
 #[cfg(any(feature = "native", feature = "wasm"))]
-pub fn outputs_list() -> HashMap<String, TypeSignature> {
-  let mut map = HashMap::new();
+pub fn outputs_list() -> std::collections::HashMap<String, TypeSignature> {
+  let mut map = std::collections::HashMap::new();
   {{#each .}}
     map.insert("{{@key}}".to_owned(),{{> type-signature .}});
   {{/each}}

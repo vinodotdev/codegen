@@ -18,7 +18,7 @@ impl Dispatch for Dispatcher {
   ) -> Result<TransportStream, Box<NativeComponentError>>{
     let result = match op {
       {{#each interface.components}}
-        "{{name}}" => generated::{{snakeCase name}}::Component::default().execute(context, data).await,
+        "{{ name }}" => self::generated::{{snakeCase name}}::Component::default().execute(context, data).await,
       {{/each}}
       _ => Err(Box::new(NativeComponentError::new(format!(
         "Component not found on this provider: {}",
@@ -33,7 +33,7 @@ pub fn get_signature() -> ProviderSignature {
   let mut components = std::collections::HashMap::new();
 
   {{#each interface.components}}
-    components.insert("{{name}}".to_owned(), generated::{{snakeCase name}}::signature());
+    components.insert("{{name}}".to_owned(), {{#ifCond @root.type '!==' 'wellknown'}}generated{{else}}{{snakeCase @root.interface.name}}{{/ifCond}}::{{snakeCase name}}::signature());
   {{/each}}
 
   {{> provider-signature interface}}
@@ -44,9 +44,10 @@ pub fn get_signature() -> ProviderSignature {
 pub mod generated {
 {{#each interface.components}}
   pub mod {{snakeCase name}} {
-    #![allow(unused,unreachable_pub)]
-    use std::collections::HashMap;
-
+    {{#ifCond @root.type '===' 'wellknown'}}
+    #![allow(unused)]
+    use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
+    {{/ifCond}}
     use async_trait::async_trait;
 
     pub use vino_provider::prelude::*;
@@ -59,7 +60,7 @@ pub mod generated {
       }
     }
 
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug)]
     pub struct Component {}
 
     #[async_trait]
@@ -87,8 +88,10 @@ pub mod generated {
       }
     }
 
-    {{> native-inputs inputs }}
-    {{> native-outputs outputs }}
+    {{#ifCond @root.type '!==' 'wellknown'}}
+      {{> native-inputs inputs }}
+      {{> native-outputs outputs }}
+    {{/ifCond}}
 
   }
 {{/each}}

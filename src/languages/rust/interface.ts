@@ -54,7 +54,7 @@ export function handler(args: Arguments): void {
     return { file: normalizeFilename(file), document: tree };
   });
 
-  const template = handlebars.compile(getTemplate(LANG, TYPE));
+  const template = getTemplate(LANG, TYPE);
   const iface = processDir('', args.schema_dir);
   const generated = template({ schemas, interface: iface });
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });

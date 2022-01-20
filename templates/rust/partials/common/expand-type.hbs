@@ -4,6 +4,7 @@
   {{#case "string"}}String{{/case}}
   {{#case "bytes"}}Vec<u8>{{/case}}
   {{#case "raw"}}RawPacket{{/case}}
+  {{#case "struct"}}serde_json::Value{{/case}}
   {{#case "link"}}ProviderLink{{/case}}
   {{#case "map"}}
     std::collections::HashMap<{{> expand-type key}}, {{> expand-type value}}>

@@ -1,12 +1,11 @@
 import yargs from 'yargs';
-import { handlebars, registerHelpers } from 'widl-template';
+import { registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,
   commitOutput,
   LANGUAGE,
   registerTypePartials,
-  widlOpts,
   CommonWidlOptions,
   CommonOutputOptions,
   outputOpts,
@@ -14,27 +13,30 @@ import {
   readInterface,
 } from '../../common';
 
-import { processDir } from '../../process-widl-dir';
-
 const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WapcIntegration;
+const TYPE = CODEGEN_TYPE.Integration;
 
 export const command = `${TYPE} <interface> [options]`;
-export const desc = 'Generate the Vino & WaPC integration code for all component schemas';
+export const desc = 'Generate the Vino integration code for the passed interface and type.';
 
 export const builder = (yargs: yargs.Argv): yargs.Argv => {
   return yargs
     .positional('interface', {
       demandOption: true,
       type: 'string',
-      description: 'Path to interface.json',
+      description: 'Path to interface JSON',
     })
-    .options(outputOpts(widlOpts({})))
-    .example(`${LANG} ${TYPE} interface.json`, 'Prints integration boilerplate code to STDOUT');
+    .options(
+      outputOpts({
+        type: { type: 'string', alias: 't', demandOption: true, choices: ['wasm', 'wellknown', 'native'] },
+      }),
+    )
+    .example(`rust ${TYPE} interface.json --type wasm`, 'Prints generated code to STDOUT');
 };
 
 interface Arguments extends CommonWidlOptions, CommonOutputOptions {
   interface: string;
+  type: 'wasm' | 'wellknown' | 'native';
 }
 
 export function handler(args: Arguments): void {
@@ -46,10 +48,10 @@ export function handler(args: Arguments): void {
   };
   registerHelpers(options);
 
-  const template = handlebars.compile(getTemplate(LANG, TYPE));
+  const template = getTemplate(LANG, TYPE);
   const iface = readInterface(args.interface);
 
-  const generated = template({ interface: iface });
+  const generated = template({ interface: iface, type: args.type });
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

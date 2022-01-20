@@ -75,6 +75,9 @@ function reduceType(type: Type, annotations: Annotation[] = []): TypeSignature {
               type: 'link',
             };
           }
+        } else if (name.value === 'struct') {
+          // TODO: convert this to core WIDL type once widl can represent it (see also: https://github.com/wapc/cli/issues/8)
+          return { type: 'struct' };
         } else {
           return { type: 'ref', ref: `#/types/${name.value}` };
         }

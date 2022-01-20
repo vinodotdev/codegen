@@ -15,12 +15,9 @@ export enum LANGUAGE {
 }
 
 export enum CODEGEN_TYPE {
-  ProviderComponents = 'provider-components',
-  ProviderIntegration = 'provider-integration',
-  WellKnownImplementer = 'wellknown-implementer',
+  Component = 'component',
+  Integration = 'integration',
   Interface = 'interface',
-  WapcComponents = 'wapc-components',
-  WapcIntegration = 'wapc-integration',
   WapcLib = 'wapc-lib',
 }
 
@@ -39,7 +36,7 @@ export const LANGUAGE_OFFERS = {
   [LANGUAGE.JSON]: JSON_TYPE,
 };
 
-export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.WapcIntegration;
+export const DEFAULT_CODEGEN_TYPE = CODEGEN_TYPE.Integration;
 
 export function readFile(path: string): string {
   try {
@@ -71,10 +68,22 @@ export function normalizeFilename(filename: string): NormalizedFilename {
   };
 }
 
-export function getTemplate(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getTemplate(language: LANGUAGE, type: CODEGEN_TYPE | WIDL_TYPE | JSON_TYPE): (data: any) => string {
   const templatePath = path.join(findroot(__dirname), 'templates', language, `${type}.hbs`);
   debug('Reading template %o->%o located at %o', language, type, templatePath);
-  return readFile(templatePath);
+  debug('Compiling template from %o', templatePath);
+  const template = handlebars.compile(readFile(templatePath));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data: any) => {
+    try {
+      debug.extend('trace')('Rendering template %o with data %o', path.basename(templatePath), data);
+      return template(data);
+    } catch (e) {
+      console.error(`Error rendering template: ${e}`);
+      throw e;
+    }
+  };
 }
 
 export function registerPartial(language: LANGUAGE, partial: string): void {
@@ -88,16 +97,16 @@ export function registerTypePartials(language: LANGUAGE, type: CODEGEN_TYPE | WI
   registerCommonPartials(language);
   const relativeDir = path.join(language, 'partials', type);
   const dir = path.join(findroot(__dirname), 'templates', relativeDir);
-  debug(`Looking for partials in ${dir}`);
+  debug(`Looking for partials in %o`, dir);
   if (!fs.existsSync(dir)) return;
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const name = file.replace(path.extname(`${file}.hbs`), '');
     const partialPath = path.join(dir, file);
-    debug(`Loading partial ${partialPath}`);
+    debug(`Loading partial %o`, partialPath);
     const exists = fs.existsSync(partialPath);
     if (exists) {
-      debug(`Registering partial for ${language}.${type}`);
+      debug(`Registering partial for %o:%o`, language, type);
       const partialSource = readFile(partialPath);
       handlebars.registerPartial(name, partialSource);
     }
@@ -109,6 +118,7 @@ export interface HelperMap {
 }
 
 export function registerLanguageHelpers(lang: LANGUAGE): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handlebars.registerHelper('ifEmpty', function (this: any, context: unknown, options): string {
     let isEmpty = false;
     if (context === undefined || context === null) {
@@ -143,16 +153,16 @@ export function registerLanguageHelpers(lang: LANGUAGE): void {
 export function registerCommonPartials(language: LANGUAGE): void {
   const relativeDir = path.join(language, 'partials', 'common');
   const dir = path.join(findroot(__dirname), 'templates', relativeDir);
-  debug(`Looking for partials in ${dir}`);
+  debug(`Looking for partials in %o`, dir);
   if (!fs.existsSync(dir)) return;
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const name = file.replace(path.extname(`${file}.hbs`), '');
     const partialPath = path.join(dir, file);
-    debug(`Loading partial ${partialPath}`);
+    debug(`Loading partial %o`, partialPath);
     const exists = fs.existsSync(partialPath);
     if (exists) {
-      debug(`Registering common partial for ${language}: ${name}`);
+      debug(`Registering common partial for %o: %o`, language, name);
       const partialSource = readFile(partialPath);
       handlebars.registerPartial(name, partialSource);
     }
@@ -204,7 +214,7 @@ export function outputOpts(obj: { [key: string]: yargs.Options }): typeof obj {
     },
     o: {
       alias: 'output',
-      describe: 'The output destination (defaults to STDOUT for text)',
+      describe: 'The output file or directory (defaults to STDOUT for text)',
       default: undefined,
       type: 'string',
     },
@@ -230,33 +240,44 @@ interface CommitOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function commitOutput(src: string, path?: string, options: CommitOptions = {}): void {
-  if (path) {
-    if (fs.existsSync(path)) {
+export function commitOutput(src: string, filePath?: string, options: CommitOptions = {}): void {
+  if (filePath) {
+    const basedir = path.dirname(filePath);
+    if (!fs.existsSync(basedir)) {
+      debug('Directory "%o" does not exist, creating it.', basedir);
+      fs.mkdirSync(basedir);
+    }
+    if (fs.existsSync(filePath)) {
       if (options.force) {
-        debug(`${path} exists, overwriting anyway because of --force`);
+        debug(`%o exists, overwriting anyway because of --force`, filePath);
       } else {
-        const contents = fs.readFileSync(path, 'utf-8');
+        const contents = fs.readFileSync(filePath, 'utf-8');
         if (contents.startsWith('/* stub */')) {
-          debug(`${path} exists but is a stub file, overwriting`);
+          debug(`%o exists but is a stub file, overwriting`, filePath);
         } else {
-          debug(`Refusing to overwrite ${path}`);
+          debug(`Refusing to overwrite %o`, filePath);
           if (options.silent) return;
           else {
-            debug(`${path} exists, to overwrite pass --force to the codegen or delete the file`);
+            debug(`%o exists, to overwrite pass --force to the codegen or delete the file`, filePath);
             return;
           }
         }
       }
     }
-    debug(`Attempting to write to ${path}`);
-    fs.writeFileSync(path, src);
+    debug(`Write to %o`, filePath);
+    try {
+      fs.writeFileSync(filePath, src);
+    } catch (e) {
+      console.error(`Error writing output to ${filePath}: `, e);
+      throw e;
+    }
   } else {
     console.log(src);
   }
 }
 
 export function readInterface(interfacePath: string): ProviderSignature {
+  debug('Reading interface JSON at %o', interfacePath);
   const ifaceJson = fs.readFileSync(interfacePath, 'utf-8');
   const iface = JSON.parse(ifaceJson) as ProviderSignature;
   return iface;

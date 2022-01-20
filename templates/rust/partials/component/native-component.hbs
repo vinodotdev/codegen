@@ -1,5 +1,9 @@
-
+{{#ifCond @root.type '===' 'wellknown'}}
+pub use {{snakeCase interface.name}}::{{snakeCase name}}::*;
+{{else}}
 pub use crate::components::generated::{{snakeCase name}}::*;
+{{/ifCond}}
+
 
 pub(crate) async fn job(
   input: Inputs,

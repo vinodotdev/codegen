@@ -1,0 +1,7 @@
+
+{{#switch type ~}}
+  {{#case "wasm"}}{{> wasm-integration . }}{{/case}}
+  {{#case "wellknown"}}{{> native-integration . }}{{/case}}
+  {{#case "native"}}{{> native-integration . }}{{/case}}
+  {{#default}}{{panic "Invalid integration type"}}{{/default}}
+{{~/switch}}

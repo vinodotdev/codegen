@@ -15,9 +15,10 @@ pub struct {{pascalCase name}} {
 {{#each interface.components}}
   pub mod {{snakeCase name}} {
 
-  use std::collections::HashMap;
-
-  pub use vino_provider::prelude::*;
+  #[cfg(any(feature = "native"))]
+  pub use vino_provider::native::prelude::*;
+  #[cfg(any(feature = "wasm"))]
+  pub use vino_provider::wasm::prelude::*;
 
   #[cfg(any(feature = "native", feature = "wasm"))]
   pub fn signature() -> ComponentSignature {

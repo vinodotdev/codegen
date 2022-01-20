@@ -1,0 +1,7 @@
+
+{{#switch type ~}}
+  {{#case "wasm"}}{{> wasm-component . }}{{/case}}
+  {{#case "wellknown"}}{{> native-component . }}{{/case}}
+  {{#case "native"}}{{> native-component . }}{{/case}}
+  {{#default}}{{panic "Invalid component type"}}{{/default}}
+{{~/switch}}

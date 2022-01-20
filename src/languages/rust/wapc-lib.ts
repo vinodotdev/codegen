@@ -33,7 +33,7 @@ export function handler(args: Arguments): void {
   };
   registerHelpers(options);
 
-  const template = handlebars.compile(getTemplate(LANG, TYPE));
+  const template = getTemplate(LANG, TYPE);
   const generated = template({});
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });

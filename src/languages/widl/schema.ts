@@ -26,7 +26,7 @@ export function handler(args: CommonOutputOptions): void {
 
   registerHelpers();
 
-  const template = handlebars.compile(getTemplate(LANG, TYPE));
+  const template = getTemplate(LANG, TYPE);
   const generated = template({});
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

@@ -39,8 +39,8 @@ impl From<Inputs> for TransportMap {
 
 #[must_use]
 #[cfg(any(feature = "native", feature = "wasm"))]
-pub fn inputs_list() -> HashMap<String, TypeSignature> {
-  let mut map = HashMap::new();
+pub fn inputs_list() -> std::collections::HashMap<String, TypeSignature> {
+  let mut map = std::collections::HashMap::new();
   {{#each .}}
     map.insert("{{@key}}".to_owned(),{{> type-signature .}});
   {{/each}}

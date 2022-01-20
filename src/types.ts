@@ -37,7 +37,7 @@ export const WIDL_TYPE_LIST = [
 
 export type TypeMap = Record<string, TypeSignature>;
 
-export type TypeSignature = SimpleType | RefType | ListType | OptionalType | MapType | LinkType;
+export type TypeSignature = SimpleType | StructType | RefType | ListType | OptionalType | MapType | LinkType;
 
 export interface ProviderSignature {
   name: string;
@@ -58,6 +58,10 @@ export interface StructSignature {
 
 export interface SimpleType {
   type: WIDL_TYPE;
+}
+
+export interface StructType {
+  type: 'struct';
 }
 
 export interface RefType {
