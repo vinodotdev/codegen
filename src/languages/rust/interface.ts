@@ -1,5 +1,5 @@
 import yargs from 'yargs';
-import { handlebars, registerHelpers } from 'widl-template';
+import { registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,
@@ -24,7 +24,7 @@ export const builder = (yargs: yargs.Argv): yargs.Argv => {
     .positional('interface', {
       demandOption: true,
       type: 'string',
-      description: 'Path to WIDL schema directory',
+      description: 'Path to interface JSON',
     })
     .options(outputOpts(widlOpts({})))
     .example(`rust ${TYPE} interface.json`, 'Prints generated code to STDOUT');
@@ -42,7 +42,7 @@ export function handler(args: Arguments): void {
   };
   registerHelpers(options);
 
-  const template = handlebars.compile(getTemplate(LANG, TYPE));
+  const template = getTemplate(LANG, TYPE);
   const iface = readInterface(args.interface);
 
   const generated = template({ interface: iface });

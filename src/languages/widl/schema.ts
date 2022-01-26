@@ -9,7 +9,7 @@ import {
   outputOpts,
 } from '../../common';
 
-import { handlebars, registerHelpers } from 'widl-template';
+import { registerHelpers } from 'widl-template';
 
 const LANG = LANGUAGE.WIDL;
 const TYPE = WIDL_TYPE.Schema;

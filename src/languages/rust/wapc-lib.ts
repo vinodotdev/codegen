@@ -1,5 +1,5 @@
 import yargs from 'yargs';
-import { handlebars, registerHelpers } from 'widl-template';
+import { registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,

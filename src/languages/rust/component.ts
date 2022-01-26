@@ -1,5 +1,5 @@
-import yargs, { boolean, options } from 'yargs';
-import { handlebars, registerHelpers } from 'widl-template';
+import yargs from 'yargs';
+import { registerHelpers } from 'widl-template';
 import {
   CODEGEN_TYPE,
   getTemplate,

@@ -13,8 +13,7 @@ describe('getTemplate', function () {
     for (const lang of Object.values(LANGUAGE)) {
       for (const type of Object.values(LANGUAGE_OFFERS[lang])) {
         const src = getTemplate(lang, type);
-        // arbitrary src length to test as a minimum;
-        if (src.length < 5) emptyTemplate.push(`${lang}/${type} missing`);
+        if (!src) emptyTemplate.push(`${lang}/${type} missing`);
       }
     }
     expect(emptyTemplate).to.deep.equal([]);
