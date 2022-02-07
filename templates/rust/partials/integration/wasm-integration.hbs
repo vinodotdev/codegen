@@ -53,7 +53,7 @@ impl Dispatch for Dispatcher {
     let payload = IncomingPayload::from_buffer(payload)?;
     let result = match op {
       {{#each interface.components}}
-        "{{name}}" => {{snakeCase name}}::Component::default().execute(&payload),
+        "{{name}}" => crate::components::generated::{{snakeCase name}}::Component::default().execute(&payload),
       {{/each}}
       _ => Err(WasmError::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
     }?;

@@ -81,7 +81,7 @@ impl Outputs {
 
 #[cfg(all(feature = "wasm", feature = "guest"))]
 impl Outputs {
-  {{#each fields}}
+  {{#each .}}
     pub fn {{snakeCase @key}}(&mut self)-> Result<PortOutput, WasmError> {
       let packets = self.packets.take("{{@key}}").ok_or_else(|| WasmError::ResponseMissing("{{@key}}".to_owned()))?;
       Ok(PortOutput::new("{{@key}}".to_owned(), packets))
@@ -96,6 +96,13 @@ impl From<ProviderOutput> for Outputs {
   }
 }
 
+
+#[cfg(all(feature = "native", feature = "guest"))]
+impl From<ProviderOutput> for Outputs {
+  fn from(output: ProviderOutput) -> Self {
+    Self { packets: output }
+  }
+}
 
 #[cfg(all(feature = "native", feature = "guest"))]
 impl From<BoxedTransportStream> for Outputs {
