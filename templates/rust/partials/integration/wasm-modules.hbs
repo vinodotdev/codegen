@@ -1,0 +1,38 @@
+
+
+{{#eachNamespace components=components namespace=namespace}}
+  // start namespace {{namespace}}
+  {{#if namespace}}
+  pub mod {{moduleName namespace}} {
+  {{> wasm-modules components=subComponents  namespace=namespace}}
+  } // end namespace {{namespace}}
+  {{else}}
+    {{#each components}}
+    pub mod {{moduleLeafName name}} {
+      use crate::components::{{moduleName name}} as implementation;
+
+      pub use vino_provider::prelude::*;
+
+      use super::*;
+
+      #[derive(Default)]
+      pub struct Component {}
+
+      impl WapcComponent for Component {
+        fn execute(&self, payload: &IncomingPayload) -> JobResult {
+          let outputs = get_outputs(payload.id());
+          let inputs = populate_inputs(payload)?;
+          implementation::job(inputs, outputs)
+        }
+      }
+
+        {{> wasm-inputs inputs }}
+        {{> wasm-outputs outputs }}
+    }
+  {{/each}}
+  {{/if}}
+
+{{/eachNamespace}}
+
+
+

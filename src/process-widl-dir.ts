@@ -20,10 +20,35 @@ import {
 import { ComponentSignature, isWidlType, ProviderSignature, StructSignature, TypeMap, TypeSignature } from './types';
 
 export function processDir(name: string, dir: string): ProviderSignature {
-  const files = fs.readdirSync(dir).filter(path => path.endsWith('.widl'));
+  const { components, types } = processWidlDir(dir);
 
-  const components: Record<string, ComponentSignature> = {};
-  let types: Record<string, StructSignature> = {};
+  const providerSignature: ProviderSignature = {
+    name,
+    types: Object.fromEntries(types.map(t => [t.name, t])),
+    components: Object.fromEntries(components.map(c => [c.name, c])),
+  };
+  return providerSignature;
+}
+
+function processWidlDir(
+  dir: string,
+  prefixes: string[] = [],
+): { types: StructSignature[]; components: ComponentSignature[] } {
+  const rv = { types: [] as StructSignature[], components: [] as ComponentSignature[] };
+  const entries = fs.readdirSync(dir);
+
+  const widlFiles = entries.filter(file => file.endsWith('.widl'));
+  const directories = entries.filter(file => fs.statSync(path.join(dir, file)).isDirectory());
+
+  for (const subdir of directories) {
+    const result = processWidlDir(path.join(dir, subdir), prefixes.concat([subdir]));
+    rv.types.push(...result.types);
+    result.components.forEach(comp => (comp.name = prefixes.concat([comp.name]).join('::')));
+    rv.components.push(...result.components);
+  }
+
+  const components: ComponentSignature[] = [];
+  const types: StructSignature[] = [];
 
   const resolver = (location: string) => {
     const pathParts = location.split('/');
@@ -32,21 +57,17 @@ export function processDir(name: string, dir: string): ProviderSignature {
     return src;
   };
 
-  for (const file of files) {
+  for (const file of widlFiles) {
     const widlSrc = readFile(path.join(dir, file));
     const tree = parse(widlSrc, resolver);
     const [component, additionalTypes] = interpret(tree);
-    types = Object.assign(types, additionalTypes);
-
-    components[component.name] = component;
+    types.push(...additionalTypes);
+    components.push(component);
   }
+  rv.components.push(...components);
+  rv.types.push(...types);
 
-  const providerSignature: ProviderSignature = {
-    name,
-    types,
-    components,
-  };
-  return providerSignature;
+  return rv;
 }
 
 function getAnnotation(name: string, annotations: Annotation[]): Annotation | undefined {
@@ -109,7 +130,7 @@ function reduceType(type: Type, annotations: Annotation[] = []): TypeSignature {
   throw new Error(`Unhandled type: ${type.getKind()}`);
 }
 
-function interpret(doc: Document): [ComponentSignature, Record<string, StructSignature>] {
+function interpret(doc: Document): [ComponentSignature, StructSignature[]] {
   const types = doc.definitions.filter(isType);
   const input_def = findByName(types, 'Inputs');
   const output_def = findByName(types, 'Outputs');
@@ -136,11 +157,9 @@ function interpret(doc: Document): [ComponentSignature, Record<string, StructSig
     outputs,
   };
 
-  const typeSignatures = Object.fromEntries(
-    types
-      .filter(t => t.name.value !== 'Inputs' && t.name.value !== 'Outputs')
-      .map(t => [t.name.value, reduceTypeDefinition(t)]),
-  );
+  const typeSignatures = types
+    .filter(t => t.name.value !== 'Inputs' && t.name.value !== 'Outputs')
+    .map(t => reduceTypeDefinition(t));
   return [component, typeSignatures];
 }
 

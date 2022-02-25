@@ -4,7 +4,8 @@
 
 pub use vino_provider::prelude::*;
 
-{{> component-imports . }}
+{{> component-imports components=interface.components namespace="" }}
+pub mod __multi__;
 
 type Result<T> = std::result::Result<T, WasmError>;
 
@@ -53,7 +54,7 @@ impl Dispatch for Dispatcher {
     let payload = IncomingPayload::from_buffer(payload)?;
     let result = match op {
       {{#each interface.components}}
-        "{{name}}" => crate::components::generated::{{snakeCase name}}::Component::default().execute(&payload),
+        "{{name}}" => crate::components::generated::{{moduleName name}}::Component::default().execute(&payload),
       {{/each}}
       _ => Err(WasmError::ComponentNotFound(op.to_owned(), ALL_COMPONENTS.join(", "))),
     }?;
@@ -65,14 +66,20 @@ impl Dispatch for Dispatcher {
 
 pub mod generated {
   use super::*;
-{{#each interface.components}}
-  pub mod {{snakeCase name}} {
-    use crate::components::{{snakeCase name}} as implementation;
+
+  {{> wasm-modules components=interface.components namespace=""}}
+
+
+  pub mod __multi__ {
+    use crate::components::__multi__ as implementation;
+    use super::Result;
+
+    #[cfg(any(feature = "native"))]
+    pub use vino_provider::native::prelude::*;
+    #[cfg(any(feature = "wasm"))]
+    pub use vino_provider::wasm::prelude::*;
 
     pub use vino_provider::prelude::*;
-
-    use super::*;
-
     #[derive(Default)]
     pub struct Component {}
 
@@ -84,9 +91,26 @@ pub mod generated {
       }
     }
 
-      {{> wasm-inputs inputs }}
-      {{> wasm-outputs outputs }}
+    fn populate_inputs(payload: &IncomingPayload) -> Result<Vec<ComponentInputs>> {
+      Ok(deserialize(payload.get("inputs")?)?)
+    }
+
+    #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+    pub enum ComponentInputs {
+      {{#each interface.components}}
+        {{pascalCase name}}(super::{{moduleName name}}::Inputs),
+      {{/each}}
+    }
+
+    #[cfg(all(feature = "guest"))]
+    #[allow(missing_debug_implementations)]
+    pub enum ComponentOutputs {
+      {{#each interface.components}}
+        {{pascalCase name}}(super::{{moduleName name}}::Outputs),
+      {{/each}}
+    }
+
+    {{> wasm-outputs multi.outputs }}
 
   }
-{{/each}}
 }

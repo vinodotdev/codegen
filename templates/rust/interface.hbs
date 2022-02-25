@@ -2,6 +2,35 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
+
+{{#ifCond @root.type '!==' 'wellknown'}}
+pub mod __multi__ {
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub enum ComponentInputs {
+  {{#each interface.components}}
+    {{pascalCase name}}(super::{{snakeCase name}}::Inputs),
+   {{/each}}
+}
+
+#[cfg(all(feature = "guest"))]
+#[allow(missing_debug_implementations)]
+pub enum ComponentOutputs {
+  {{#each interface.components}}
+    {{pascalCase name}}(super::{{snakeCase name}}::Outputs),
+   {{/each}}
+}
+  #[cfg(any(feature = "native"))]
+  pub use vino_provider::native::prelude::*;
+  #[cfg(any(feature = "wasm"))]
+  pub use vino_provider::wasm::prelude::*;
+
+  {{> native-inputs multi.inputs }}
+  {{> native-outputs multi.outputs }}
+
+}
+{{/ifCond}}
+
+
 {{#each types}}
 #[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, Clone)]
 pub struct {{pascalCase name}} {

@@ -6,6 +6,7 @@
   {{#case "raw"}}RawPacket{{/case}}
   {{#case "struct"}}serde_json::Value{{/case}}
   {{#case "link"}}ProviderLink{{/case}}
+  {{#case "__input__"}}ComponentInputs{{/case}}
   {{#case "map"}}
     std::collections::HashMap<{{> expand-type key}}, {{> expand-type value}}>
   {{/case}}

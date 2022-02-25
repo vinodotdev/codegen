@@ -4,7 +4,8 @@
 
 pub use vino_provider::prelude::*;
 
-{{> component-imports . }}
+{{> component-imports components=interface.components namespace="" }}
+pub mod __multi__;
 
 #[derive(Debug)]
 pub(crate) struct Dispatcher {}
@@ -18,8 +19,13 @@ impl Dispatch for Dispatcher {
   ) -> Result<TransportStream, Box<NativeComponentError>>{
     let result = match op {
       {{#each interface.components}}
-        "{{ name }}" => self::generated::{{snakeCase name}}::Component::default().execute(context, data).await,
+        "{{ name }}" => self::generated::{{moduleName name}}::Component::default().execute(context, data).await,
       {{/each}}
+      "__multi__" => {
+        self::generated::__multi__::Component::default()
+          .execute(context, data)
+          .await
+      }
       _ => Err(Box::new(NativeComponentError::new(format!(
         "Component not found on this provider: {}",
         op
@@ -33,7 +39,7 @@ pub fn get_signature() -> ProviderSignature {
   let mut components = std::collections::HashMap::new();
 
   {{#each interface.components}}
-    components.insert("{{name}}".to_owned(), {{#ifCond @root.type '!==' 'wellknown'}}generated{{else}}{{snakeCase @root.interface.name}}{{/ifCond}}::{{snakeCase name}}::signature());
+    components.insert("{{name}}".to_owned(), {{#ifCond @root.type '!==' 'wellknown'}}generated{{else}}{{snakeCase @root.interface.name}}{{/ifCond}}::{{moduleName name}}::signature());
   {{/each}}
 
   {{> provider-signature interface}}
@@ -42,23 +48,38 @@ pub fn get_signature() -> ProviderSignature {
 {{> types interface }}
 
 pub mod generated {
-{{#each interface.components}}
-  pub mod {{snakeCase name}} {
+  {{> native-modules components=interface.components namespace=""}}
+
+  pub mod __multi__ {
     {{#ifCond @root.type '===' 'wellknown'}}
     #![allow(unused)]
-    use {{snakeCase @root.interface.name}}::{{snakeCase name}}::*;
+    use {{snakeCase @root.interface.name}}::__multi__::*;
+    {{else}}
+
+    #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+    pub enum ComponentInputs {
+      {{#each interface.components}}
+        {{pascalCase name}}(super::{{moduleName name}}::Inputs),
+      {{/each}}
+    }
+
+    #[cfg(all(feature = "guest"))]
+    #[allow(missing_debug_implementations)]
+    pub enum ComponentOutputs {
+      {{#each interface.components}}
+        {{pascalCase name}}(super::{{moduleName name}}::Outputs),
+      {{/each}}
+    }
+    #[cfg(any(feature = "native"))]
+    pub use vino_provider::native::prelude::*;
+    #[cfg(any(feature = "wasm"))]
+    pub use vino_provider::wasm::prelude::*;
+
+    {{> native-outputs multi.outputs }}
     {{/ifCond}}
     use async_trait::async_trait;
 
     pub use vino_provider::prelude::*;
-
-    pub fn signature() -> ComponentSignature {
-      ComponentSignature {
-        name: "{{name}}".to_owned(),
-        inputs : inputs_list().into(),
-        outputs : outputs_list().into(),
-      }
-    }
 
     #[derive(Default, Copy, Clone, Debug)]
     pub struct Component {}
@@ -73,7 +94,7 @@ pub mod generated {
       ) -> Result<TransportStream, Box<NativeComponentError>> {
         let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
         let (outputs, stream) = get_outputs();
-        let result = tokio::spawn(crate::components::{{snakeCase name}}::job(inputs, outputs, context))
+        let result = tokio::spawn(crate::components::__multi__::job(inputs, outputs, context))
           .await
           .map_err(|e| {
             Box::new(NativeComponentError::new(format!(
@@ -88,11 +109,9 @@ pub mod generated {
       }
     }
 
-    {{#ifCond @root.type '!==' 'wellknown'}}
-      {{> native-inputs inputs }}
-      {{> native-outputs outputs }}
-    {{/ifCond}}
+    pub fn populate_inputs(mut payload: TransportMap) -> Result<Vec<ComponentInputs>, TransportError> {
+      payload.consume::<Vec<ComponentInputs>>("inputs")
+    }
 
   }
-{{/each}}
 }

@@ -1,10 +1,20 @@
+
 {{#ifCond @root.type '===' 'wellknown'}}
-pub use {{snakeCase interface.name}}::{{snakeCase name}}::*;
+pub use {{snakeCase interface.name}}::{{moduleName name}}::*;
 {{else}}
-pub use crate::components::generated::{{snakeCase name}}::*;
+pub use crate::components::generated::{{moduleName name}}::*;
 {{/ifCond}}
 
 
+{{#if multi}}
+pub(crate) async fn job(
+  _inputs: Vec<ComponentInputs>,
+  _output: OutputPorts,
+  _context: crate::Context,
+) -> JobResult {
+  unimplemented!();
+}
+{{else}}
 pub(crate) async fn job(
   input: Inputs,
   output: OutputPorts,
@@ -12,3 +22,4 @@ pub(crate) async fn job(
 ) -> JobResult {
   Ok(())
 }
+{{/if}}

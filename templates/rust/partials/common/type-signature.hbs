@@ -16,11 +16,13 @@
   {{#case "raw"}}TypeSignature::Raw{{/case}}
   {{#case "value"}}TypeSignature::Value{{/case}}
 
+  {{#case "__input__"}}TypeSignature::ComponentInput{{/case}}
+
   {{#case "link"}}Link{provider:Some("{{provider}}".to_owned())}{{/case}}
 
   {{#case "map"}}
   TypeSignature::Map{
-    key:Box::new({{> type-signature key}})
+    key:Box::new({{> type-signature key}}),
     value:Box::new({{> type-signature value }})
   }
   {{/case}}

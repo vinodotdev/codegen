@@ -12,6 +12,7 @@ import {
   outputOpts,
   readInterface,
 } from '../../common';
+import { BATCH_SIGNATURE } from '../../batch_component';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.Interface;
@@ -45,7 +46,10 @@ export function handler(args: Arguments): void {
   const template = getTemplate(LANG, TYPE);
   const iface = readInterface(args.interface);
 
-  const generated = template({ interface: iface });
+  const generated = template({
+    interface: iface,
+    multi: BATCH_SIGNATURE,
+  });
 
   commitOutput(generated, args.output, { force: args.force, silent: args.silent });
 }

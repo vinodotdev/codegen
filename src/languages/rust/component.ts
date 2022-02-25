@@ -13,6 +13,7 @@ import {
 } from '../../common';
 import path from 'path';
 import { debug } from '../../common';
+import { BATCH_COMPONENT_NAME } from '../../batch_component';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.Component;
@@ -58,34 +59,44 @@ export function handler(args: Arguments): void {
   const template = getTemplate(LANG, TYPE);
   const iface = readInterface(args.interface);
   const component_name = args.component_name;
-  if (args.all) {
-    if (component_name) {
-      debug('Warning: component name (%s) and --all specified. --all takes precedence.');
-    }
-    for (const component in iface.components) {
-      const generated = template({
-        name: component,
-        interface: iface,
-        signature: iface.components[component],
-        type: args.type,
-      });
-      const fileName = component.replace(/-/g, '_');
-      commitOutput(generated, path.join(args.output || '.', `${fileName}.rs`), {
-        force: args.force,
-        silent: args.silent,
-      });
-    }
-  } else if (component_name) {
-    const component = iface.components[component_name];
-    if (!component) {
-      throw new Error(`Component name ${component_name} not found in interface`);
-    }
-    const generated = template({ name: component_name, interface: iface, signature: component, type: args.type });
-    commitOutput(generated, args.output, {
+
+  function writeComponent(component: string, fileName?: string, batch = false) {
+    const generated = template({
+      name: component,
+      interface: iface,
+      type: args.type,
+      batch,
+    });
+
+    commitOutput(generated, fileName, {
       force: args.force,
       silent: args.silent,
     });
-  } else {
+  }
+
+  if (!(args.all || component_name)) {
     throw new Error('Either component name or --all must be specified');
+  }
+
+  if (args.all) {
+    if (component_name) {
+      console.warn('Warning: component name (%s) and --all specified. --all takes precedence.');
+    }
+    for (const component in iface.components) {
+      const fileName = component.replace(/[::]+/g, '/').replace(/[-]+/g, '_');
+      writeComponent(component, path.join(args.output || '.', `${fileName}.rs`));
+    }
+    const fileName = path.join(args.output || '.', `${BATCH_COMPONENT_NAME}.rs`);
+    writeComponent(BATCH_COMPONENT_NAME, fileName, true);
+  } else if (component_name) {
+    if (component_name == BATCH_COMPONENT_NAME) {
+      writeComponent(BATCH_COMPONENT_NAME, args.output, true);
+    } else {
+      const component = iface.components[component_name];
+      if (!component) {
+        throw new Error(`Component name ${component_name} not found in interface`);
+      }
+      writeComponent(component_name, args.output);
+    }
   }
 }

@@ -43,8 +43,8 @@ impl PortSender for {{pascalCase @key}}PortSender {
       }
     }
 
-    fn get_port_name(&self) -> String {
-      self.port.name.clone()
+    fn get_port_name(&self) -> &str {
+      &self.port.name
     }
 }
 {{/each}}

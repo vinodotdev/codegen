@@ -1,0 +1,67 @@
+
+
+{{#eachNamespace components=components namespace=namespace}}
+  // start namespace {{namespace}}
+  {{#if namespace}}
+  pub mod {{moduleName namespace}} {
+  {{> native-modules components=components  namespace=namespace}}
+  } // end namespace {{namespace}}
+  {{else}}
+  {{#each components}}
+  // Component name : {{name}}
+  pub mod {{moduleLeafName name}} {
+    {{#ifCond @root.type '===' 'wellknown'}}
+    #![allow(unused)]
+    use {{snakeCase @root.interface.name}}::{{moduleName name}}::*;
+    {{/ifCond}}
+    use async_trait::async_trait;
+
+    pub use vino_provider::prelude::*;
+
+    pub fn signature() -> ComponentSignature {
+      ComponentSignature {
+        name: "{{name}}".to_owned(),
+        inputs : inputs_list().into(),
+        outputs : outputs_list().into(),
+      }
+    }
+
+    #[derive(Default, Copy, Clone, Debug)]
+    pub struct Component {}
+
+    #[async_trait]
+    impl NativeComponent for Component {
+      type Context = crate::Context;
+      async fn execute(
+        &self,
+        context: Self::Context,
+        data: TransportMap,
+      ) -> Result<TransportStream, Box<NativeComponentError>> {
+        let inputs = populate_inputs(data).map_err(|e| NativeComponentError::new(e.to_string()))?;
+        let (outputs, stream) = get_outputs();
+        let result = tokio::spawn(crate::components::{{moduleName name}}::job(inputs, outputs, context))
+          .await
+          .map_err(|e| {
+            Box::new(NativeComponentError::new(format!(
+              "Component error: {}",
+              e
+            )))
+          })?;
+        match result {
+          Ok(_) => Ok(stream),
+          Err(e) => Err(Box::new(NativeComponentError::new(e.to_string()))),
+        }
+      }
+    }
+
+    {{#ifCond @root.type '!==' 'wellknown'}}
+      {{> native-inputs inputs }}
+      {{> native-outputs outputs }}
+    {{/ifCond}}
+  }
+  {{/each}}
+  {{/if}}
+{{/eachNamespace}}
+
+
+

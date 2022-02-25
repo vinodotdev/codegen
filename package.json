@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@wapc/widl": "0.0.9",
+    "change-case-all": "^1.0.14",
     "debug": "^4.3.1",
     "find-root": "^1.1.0",
     "tslib": "^2.3.1",

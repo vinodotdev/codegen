@@ -4,8 +4,9 @@ import findroot from 'find-root';
 import DEBUG from 'debug';
 import { handlebars } from 'widl-template';
 import { AbstractNode, Kind, ListType, MapType, Named, Optional } from '@wapc/widl/ast';
-import yargs from 'yargs';
-import { ProviderSignature } from './types';
+import yargs, { string } from 'yargs';
+import { ComponentSignature, ProviderSignature } from './types';
+import { snakeCase } from 'change-case-all';
 export const debug = DEBUG('vino-codegen');
 
 export enum LANGUAGE {
@@ -134,16 +135,86 @@ export function registerLanguageHelpers(lang: LANGUAGE): void {
     }
     return isEmpty ? options.fn(this) : options.inverse(this);
   });
+
   switch (lang) {
     case LANGUAGE.Rust:
       {
-        handlebars.registerHelper('refToModulePath', function (context: string): string {
+        // Returns a snakeCased version of a module path.
+        handlebars.registerHelper('moduleName', function (context: string): string {
           if (context) {
-            return context.substr(1).split('/').slice(1).join('::');
+            return context
+              .split('::')
+              .map(n => snakeCase(n))
+              .join('::');
           } else {
-            throw new Error(`Called refToModulePath with invalid context: ${context}`);
+            throw new Error(`Called moduleName with invalid context: ${context}`);
           }
         });
+
+        // Returns a snakeCased version of the last part of a module path.
+        handlebars.registerHelper('moduleLeafName', function (context: string): string {
+          if (context) {
+            const parts = context.split('::').map(n => snakeCase(n));
+            return parts[parts.length - 1];
+          } else {
+            throw new Error(`Called moduleName with invalid context: ${context}`);
+          }
+        });
+
+        // Takes a map of components and a root namespace and iterates over
+        // the first layer of components in that namespace.
+        // Useful when used recursively to traverse a list of components in a
+        // hierarchical fashion.
+        handlebars.registerHelper(
+          'eachNamespace',
+          function (context: {
+            hash: {
+              components: Record<string, ComponentSignature>;
+              namespace?: string;
+            };
+            fn: Handlebars.TemplateDelegate;
+          }): string {
+            let returnText = '';
+            interface NamespaceEntry {
+              namespace?: string;
+              components: Record<string, ComponentSignature>;
+            }
+            const namespaces: Record<string, NamespaceEntry> = {};
+            const SEP = '::';
+            const rootNs = context.hash.namespace || '';
+
+            const rootNsParts = rootNs ? rootNs.split(SEP) : [];
+            context.hash.namespace;
+            for (const name in context.hash.components) {
+              const component = context.hash.components[name] as ComponentSignature;
+
+              const nsPathParts = name.split(SEP).slice(0, -1);
+              const componentNamespace = nsPathParts.join(SEP);
+
+              if (componentNamespace.startsWith(rootNs)) {
+                const remainingPath = nsPathParts.slice(rootNsParts.length);
+                const currentLevel = remainingPath[0] || '';
+                if (namespaces[currentLevel]) {
+                  namespaces[currentLevel].components[name] = component;
+                } else {
+                  namespaces[currentLevel] = {
+                    namespace: currentLevel,
+                    components: { [name]: component },
+                  };
+                }
+              }
+            }
+
+            for (const nsName in namespaces) {
+              const entry = namespaces[nsName];
+              debug('NS entry: %o with %o components', nsName, Object.keys(entry.components).length);
+              const inner = context.fn(entry);
+              returnText += inner;
+            }
+
+            return returnText;
+          },
+        );
       }
       break;
     default:
