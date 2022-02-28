@@ -6,7 +6,7 @@ pub use crate::components::generated::{{moduleName name}}::*;
 {{/ifCond}}
 
 
-{{#if multi}}
+{{#if batch}}
 pub(crate) async fn job(
   _inputs: Vec<ComponentInputs>,
   _output: OutputPorts,

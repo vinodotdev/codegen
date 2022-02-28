@@ -10,19 +10,12 @@ import {
   CommonOutputOptions,
   outputOpts,
   registerLanguageHelpers,
-<<<<<<< HEAD:src/languages/rust/integration.ts
   readInterface,
 } from '../../common';
 import { BATCH_SIGNATURE } from '../../batch_component';
 
 const LANG = LANGUAGE.Rust;
 const TYPE = CODEGEN_TYPE.Integration;
-=======
-} from '../../common';
-
-const LANG = LANGUAGE.Rust;
-const TYPE = CODEGEN_TYPE.WellKnownImplementer;
->>>>>>> 24ef858 (rust: combined components module with generated module, started normalizing around interface.json signature vs processing schemas in templates, added rust test project):src/languages/rust/wellknown-implementer.ts
 
 export const command = `${TYPE} <interface> [options]`;
 export const desc = 'Generate the Vino integration code for the passed interface and type.';
