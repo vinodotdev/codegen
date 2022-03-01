@@ -8,6 +8,13 @@ This is the core code generator for [Vino](https://vino.dev) components and prov
 $ npm install -g @vinodotdev/codegen
 ```
 
+## Install from Source
+```shell
+$ npm install
+$ npm run build
+$ npm install -g .
+```
+
 ## Usage
 
 Run `vino-codegen --help` to get a list of languages available to generate. Use `--help` on any of the languages to dive further, e.g.:
