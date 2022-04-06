@@ -3,7 +3,8 @@ export const BATCH_SIGNATURE = {
     inputs: {
       type: 'list',
       element: {
-        type: '__input__',
+        type: 'internal',
+        id: '__input__',
       },
     },
   },

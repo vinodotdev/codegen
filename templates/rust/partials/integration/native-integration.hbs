@@ -39,7 +39,7 @@ pub fn get_signature() -> ProviderSignature {
   let mut components = std::collections::HashMap::new();
 
   {{#each interface.components}}
-    components.insert("{{name}}".to_owned(), {{#ifCond @root.type '!==' 'wellknown'}}generated{{else}}{{snakeCase @root.interface.name}}{{/ifCond}}::{{moduleName name}}::signature());
+    components.insert("{{name}}", {{#ifCond @root.type '!==' 'wellknown'}}generated{{else}}{{snakeCase @root.interface.name}}{{/ifCond}}::{{moduleName name}}::signature());
   {{/each}}
 
   {{> provider-signature interface}}
