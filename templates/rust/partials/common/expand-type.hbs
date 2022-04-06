@@ -6,7 +6,17 @@
   {{#case "raw"}}RawPacket{{/case}}
   {{#case "struct"}}serde_json::Value{{/case}}
   {{#case "link"}}ProviderLink{{/case}}
-  {{#case "__input__"}}ComponentInputs{{/case}}
+  {{#case "internal"}}
+    {{#switch id}}
+      {{#case "__input__"}}
+        ComponentInputs
+      {{/case}}
+      {{#default}}
+        {{debug .}}
+        {{panic "Unknown internal type..."}}
+      {{/default}}
+    {{/switch}}
+  {{/case}}
   {{#case "map"}}
     std::collections::HashMap<{{> expand-type key}}, {{> expand-type value}}>
   {{/case}}

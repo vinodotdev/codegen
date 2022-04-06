@@ -16,7 +16,17 @@
   {{#case "raw"}}TypeSignature::Raw{{/case}}
   {{#case "value"}}TypeSignature::Value{{/case}}
 
-  {{#case "__input__"}}TypeSignature::ComponentInput{{/case}}
+  {{#case "internal"}}
+    TypeSignature::Internal(
+    {{#switch id }}
+      {{#case "__input__"}}InternalType::ComponentInput{{/case}}
+      {{#default}}
+        {{debug .}}
+        {{panic "Unknown internal type..."}}
+      {{/default}}
+    {{/switch}}
+    )
+  {{/case}}
 
   {{#case "link"}}Link{provider:Some("{{provider}}".to_owned())}{{/case}}
 

@@ -14,10 +14,10 @@ impl From<Inputs> for TransportMap {
     {{#each . }}
     {{#switch type}}
       {{#case "raw"}}
-        map.insert("{{snakeCase @key}}".to_owned(), inputs.{{snakeCase @key}}.into());
+        map.insert("{{snakeCase @key}}", inputs.{{snakeCase @key}}.into());
       {{/case}}
       {{#default}}
-        map.insert("{{snakeCase @key}}".to_owned(), MessageTransport::success(&inputs.{{snakeCase @key}}));
+        map.insert("{{snakeCase @key}}", MessageTransport::success(&inputs.{{snakeCase @key}}));
       {{/default}}
     {{/switch}}
     {{/each}}

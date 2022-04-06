@@ -139,6 +139,14 @@ export function registerLanguageHelpers(lang: LANGUAGE): void {
   switch (lang) {
     case LANGUAGE.Rust:
       {
+        handlebars.registerHelper('refToModulePath', function (context: string): string {
+          if (context) {
+            return context.substr(1).split('/').slice(1).join('::');
+          } else {
+            throw new Error(`Called refToModulePath with invalid context: ${context}`);
+          }
+        });
+
         // Returns a snakeCased version of a module path.
         handlebars.registerHelper('moduleName', function (context: string): string {
           if (context) {
