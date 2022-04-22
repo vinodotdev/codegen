@@ -2,7 +2,11 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-pub use vino_provider::prelude::*;
+
+#[cfg(all(feature = "native", not(feature="wasm")))]
+pub use vino_provider::native::prelude::*;
+#[cfg(all(feature = "wasm", not(feature="native")))]
+pub use vino_provider::wasm::prelude::*;
 
 {{> component-imports components=interface.components namespace="" }}
 pub mod __multi__;
@@ -75,11 +79,14 @@ pub mod generated {
     #[cfg(any(feature = "wasm"))]
     pub use vino_provider::wasm::prelude::*;
 
-    {{> native-outputs multi.outputs }}
+    {{> outputs multi.outputs }}
     {{/ifCond}}
     use async_trait::async_trait;
 
-    pub use vino_provider::prelude::*;
+    #[cfg(all(feature = "native", not(feature="wasm")))]
+    pub use vino_provider::native::prelude::*;
+    #[cfg(all(feature = "wasm", not(feature="native")))]
+    pub use vino_provider::wasm::prelude::*;
 
     #[derive(Default, Copy, Clone, Debug)]
     pub struct Component {}

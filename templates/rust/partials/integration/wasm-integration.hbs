@@ -2,12 +2,13 @@
 ***** This file is generated, do not edit *****
 ***********************************************/
 
-pub use vino_provider::prelude::*;
+#[cfg(all(feature = "native", not(feature="wasm")))]
+pub use vino_provider::native::prelude::*;
+#[cfg(all(feature = "wasm", not(feature="native")))]
+pub use vino_provider::wasm::prelude::*;
 
 {{> component-imports components=interface.components namespace="" }}
 pub mod __multi__;
-
-type Result<T> = std::result::Result<T, WasmError>;
 
 #[no_mangle]
 pub(crate) extern "C" fn __guest_call(op_len: i32, req_len: i32) -> i32 {
@@ -65,21 +66,23 @@ impl Dispatch for Dispatcher {
 {{> types interface }}
 
 pub mod generated {
-  use super::*;
 
   {{> wasm-modules components=interface.components namespace=""}}
 
 
   pub mod __multi__ {
     use crate::components::__multi__ as implementation;
-    use super::Result;
 
-    #[cfg(any(feature = "native"))]
+    #[cfg(all(feature = "native", not(feature="wasm")))]
     pub use vino_provider::native::prelude::*;
-    #[cfg(any(feature = "wasm"))]
+    #[cfg(all(feature = "wasm", not(feature="native")))]
     pub use vino_provider::wasm::prelude::*;
 
-    pub use vino_provider::prelude::*;
+    #[cfg(all(feature = "native", not(feature="wasm")))]
+    pub use vino_provider::native::prelude::*;
+    #[cfg(all(feature = "wasm", not(feature="native")))]
+    pub use vino_provider::wasm::prelude::*;
+
     #[derive(Default)]
     pub struct Component {}
 
@@ -91,7 +94,7 @@ pub mod generated {
       }
     }
 
-    fn populate_inputs(payload: &IncomingPayload) -> Result<Vec<ComponentInputs>> {
+    fn populate_inputs(payload: &IncomingPayload) -> Result<Vec<ComponentInputs>,WasmError> {
       Ok(deserialize(payload.get("inputs")?)?)
     }
 
@@ -110,7 +113,7 @@ pub mod generated {
       {{/each}}
     }
 
-    {{> wasm-outputs multi.outputs }}
+    {{> outputs multi.outputs }}
 
   }
 }

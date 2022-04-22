@@ -1,14 +1,19 @@
 
 
-#[cfg(any(feature = "native", feature = "wasm"))]
+#[cfg(all(feature = "native", not(feature = "wasm")))]
 pub fn populate_inputs(mut payload: TransportMap) -> Result<Inputs, TransportError> {
   Ok(Inputs {
     {{#each . }}
-    {{#ifCond type "==" "raw"}}
-      {{snakeCase @key}}: payload.consume_raw("{{@key}}")?.into(),
-    {{else}}
       {{snakeCase @key}}: payload.consume("{{@key}}")?,
-    {{/ifCond}}
+    {{/each}}
+  })
+}
+
+#[cfg(all(feature = "wasm", not(feature = "native")))]
+fn populate_inputs(payload: &IncomingPayload) -> Result<Inputs, WasmError> {
+  Ok(Inputs {
+    {{#each . }}
+    {{snakeCase @key}}: deserialize(payload.get("{{@key}}")?)?,
     {{/each}}
   })
 }
@@ -21,24 +26,19 @@ pub struct Inputs {
 {{/each}}
 }
 
-#[cfg(any(feature = "native", feature = "wasm"))]
+#[cfg(all(feature = "guest", any(feature = "native", feature = "wasm")))]
 impl From<Inputs> for TransportMap {
   fn from(inputs: Inputs) -> TransportMap {
     let mut map = TransportMap::new();
     {{#each . }}
-    {{#ifCond type "==" "raw"}}
-      map.insert("{{snakeCase @key}}", inputs.{{snakeCase @key}}.into());
-    {{else}}
       map.insert("{{snakeCase @key}}", MessageTransport::success(&inputs.{{snakeCase @key}}));
-    {{/ifCond}}
-
     {{/each}}
     map
   }
 }
 
 #[must_use]
-#[cfg(any(feature = "native", feature = "wasm"))]
+#[cfg(all(feature="provider", feature = "native"))]
 pub fn inputs_list() -> std::collections::HashMap<String, TypeSignature> {
   let mut map = std::collections::HashMap::new();
   {{#each .}}

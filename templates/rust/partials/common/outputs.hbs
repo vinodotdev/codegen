@@ -1,14 +1,7 @@
 
-#[derive(Debug, Default)]
-#[cfg(feature = "provider")]
-pub struct OutputPorts {
-  {{#each .}}
-    pub {{snakeCase @key}}: {{pascalCase @key}}PortSender,
-  {{/each}}
-}
-
+// A list of ports and their type signatures.
 #[must_use]
-#[cfg(any(feature = "native", feature = "wasm"))]
+#[cfg(all(feature="provider", any(feature = "native", feature = "wasm")))]
 pub fn outputs_list() -> std::collections::HashMap<String, TypeSignature> {
   let mut map = std::collections::HashMap::new();
   {{#each .}}
@@ -17,14 +10,28 @@ pub fn outputs_list() -> std::collections::HashMap<String, TypeSignature> {
   map
 }
 
+// A list of output ports and their associated stream sender implementations.
+#[derive(Debug)]
+#[cfg_attr(all(feature = "provider", feature="native"), derive(Default))]
+#[cfg(feature = "provider")]
+pub struct OutputPorts {
+  {{#each .}}
+    pub {{snakeCase @key}}: {{pascalCase @key}}PortSender,
+  {{/each}}
+}
+
+// Definition and implementation of each port's sender.
 {{#each .}}
 #[derive(Debug)]
 #[cfg(feature = "provider")]
 pub struct {{pascalCase @key}}PortSender {
+    #[cfg(feature = "native")]
     port: PortChannel,
+    #[cfg(feature = "wasm")]
+    id: u32,
 }
 
-#[cfg(feature = "provider")]
+#[cfg(all(feature = "provider", feature="native"))]
 impl Default for {{pascalCase @key}}PortSender {
     fn default() -> Self {
         Self {
@@ -33,7 +40,8 @@ impl Default for {{pascalCase @key}}PortSender {
     }
 }
 
-#[cfg(feature = "provider")]
+// Native sender implementation
+#[cfg(all(feature = "provider", feature="native"))]
 impl PortSender for {{pascalCase @key}}PortSender {
     fn get_port(&self) -> Result<&PortChannel, ProviderError> {
       if self.port.is_closed() {
@@ -47,10 +55,23 @@ impl PortSender for {{pascalCase @key}}PortSender {
       &self.port.name
     }
 }
+
+// WASM sender implementation
+#[cfg(all(feature = "provider", feature="wasm"))]
+impl PortSender for {{pascalCase @key}}PortSender {
+  type PayloadType = {{> expand-type .}};
+  fn get_name(&self) -> String {
+    "{{@key}}".to_string()
+  }
+  fn get_id(&self) -> u32 {
+    self.id
+  }
+}
 {{/each}}
 
+
 #[must_use]
-#[cfg(feature = "provider")]
+#[cfg(all(feature = "provider", feature="native"))]
 pub fn get_outputs() -> (OutputPorts, TransportStream) {
     let mut outputs = OutputPorts::default();
     let mut ports = vec![
@@ -62,6 +83,14 @@ pub fn get_outputs() -> (OutputPorts, TransportStream) {
     (outputs, stream)
 }
 
+#[cfg(all(feature = "provider", feature="wasm"))]
+fn get_outputs(id:u32) -> OutputPorts {
+  OutputPorts {
+  {{#each .}}
+    {{snakeCase @key}}: {{pascalCase @key}}PortSender { id },
+  {{/each}}
+  }
+}
 
 #[cfg(all(feature = "guest"))]
 #[allow(missing_debug_implementations)]
@@ -73,7 +102,7 @@ pub struct Outputs {
 impl Outputs {
   {{#each .}}
     pub async fn {{snakeCase @key}}(&mut self)-> Result<PortOutput<{{> expand-type . }}>, ProviderError> {
-      let packets = self.packets.take("{{@key}}").await;
+      let packets = self.packets.drain_port("{{@key}}").await;
       Ok(PortOutput::new("{{@key}}".to_owned(), packets))
     }
   {{/each}}
@@ -82,8 +111,8 @@ impl Outputs {
 #[cfg(all(feature = "wasm", feature = "guest"))]
 impl Outputs {
   {{#each .}}
-    pub fn {{snakeCase @key}}(&mut self)-> Result<PortOutput, WasmError> {
-      let packets = self.packets.take("{{@key}}").ok_or_else(|| WasmError::ResponseMissing("{{@key}}".to_owned()))?;
+    pub fn {{snakeCase @key}}(&mut self)-> Result<PortOutput, ComponentError> {
+      let packets = self.packets.drain_port("{{@key}}")?;
       Ok(PortOutput::new("{{@key}}".to_owned(), packets))
     }
   {{/each}}

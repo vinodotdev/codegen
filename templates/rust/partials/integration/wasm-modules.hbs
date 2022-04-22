@@ -11,9 +11,10 @@
     pub mod {{moduleLeafName name}} {
       use crate::components::{{moduleName name}} as implementation;
 
-      pub use vino_provider::prelude::*;
-
-      use super::*;
+      #[cfg(all(feature = "native", not(feature="wasm")))]
+      pub use vino_provider::native::prelude::*;
+      #[cfg(all(feature = "wasm", not(feature="native")))]
+      pub use vino_provider::wasm::prelude::*;
 
       #[derive(Default)]
       pub struct Component {}
@@ -26,8 +27,8 @@
         }
       }
 
-        {{> wasm-inputs inputs }}
-        {{> wasm-outputs outputs }}
+        {{> inputs inputs }}
+        {{> outputs outputs }}
     }
   {{/each}}
   {{/if}}

@@ -4,7 +4,12 @@ pub mod types {
 }
 {{else}}
 pub mod types {
-  use vino_provider::prelude::*;
+
+  #[cfg(all(feature = "native", not(feature="wasm")))]
+  use vino_provider::native::prelude::*;
+  #[cfg(all(feature = "wasm", not(feature="native")))]
+  use vino_provider::wasm::prelude::*;
+
   {{#each types}}
   {{> struct-definition . }}
   {{/each}}

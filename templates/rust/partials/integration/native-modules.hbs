@@ -16,7 +16,10 @@
     {{/ifCond}}
     use async_trait::async_trait;
 
-    pub use vino_provider::prelude::*;
+    #[cfg(all(feature = "native", not(feature="wasm")))]
+    pub use vino_provider::native::prelude::*;
+    #[cfg(all(feature = "wasm", not(feature="native")))]
+    pub use vino_provider::wasm::prelude::*;
 
     pub fn signature() -> ComponentSignature {
       ComponentSignature {
@@ -55,8 +58,8 @@
     }
 
     {{#ifCond @root.type '!==' 'wellknown'}}
-      {{> native-inputs inputs }}
-      {{> native-outputs outputs }}
+      {{> inputs inputs }}
+      {{> outputs outputs }}
     {{/ifCond}}
   }
   {{/each}}

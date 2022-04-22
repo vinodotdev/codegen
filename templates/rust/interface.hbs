@@ -24,8 +24,8 @@ pub enum ComponentOutputs {
   #[cfg(any(feature = "wasm"))]
   pub use vino_provider::wasm::prelude::*;
 
-  {{> native-inputs multi.inputs }}
-  {{> native-outputs multi.outputs }}
+  {{> inputs multi.inputs }}
+  {{> outputs multi.outputs }}
 
 }
 {{/ifCond}}
@@ -58,7 +58,7 @@ pub struct {{pascalCase name}} {
     }
   }
 
-  {{> native-inputs inputs }}
-  {{> native-outputs outputs }}
+  {{> inputs inputs }}
+  {{> outputs outputs }}
 }
 {{/each}}
